@@ -25,6 +25,17 @@ class RELINKER_PT_Panel(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(props, "mirror_axis_neg_x")
 
+        layout.separator()
+        layout.label(text="Cleanup :")
+        layout.operator("lw_pannel.merge_by_distance", icon='AUTOMERGE_ON')
+        layout.operator("lw_pannel.clear_custom_normals", icon='NORMALS_VERTEX')
+
+        layout.separator()
+        layout.label(text="Séparation :")
+        layout.operator("lw_pannel.separate_selected", icon='UV_ISLANDSEL')
+        layout.operator("lw_pannel.separate_loose", icon='GROUP_VERTEX')
+
+        layout.separator()
         layout.operator("lw_pannel.remove_unused_materials", icon='X')
         layout.operator("lw_pannel.select_objects_with_same_materials", icon='RESTRICT_SELECT_OFF')
 
