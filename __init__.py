@@ -1,7 +1,7 @@
 bl_info = {
     "name": "LW ModelToGmodHelper",
     "author": "LowWard",
-    "version": (0, 1),
+    "version": (0, 0, 1),
     "blender": (4, 4, 3),
     "location": "View3D > Sidebar > LW / ModelToGmodHelper",
     "description": "Relink textures, génère des LODs, outils de nettoyage géométrique",
