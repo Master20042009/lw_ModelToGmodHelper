@@ -1,7 +1,7 @@
 import bpy
 
 class RELINKER_OT_CreateLODs(bpy.types.Operator):
-    bl_idname = "relinker.create_lods"
+    bl_idname = "lw_pannel.create_lods"
     bl_label = "Générer les LODs"
 
     def execute(self, context):

@@ -1,7 +1,7 @@
 import bpy
 
 class RELINKER_OT_MergeByDistance(bpy.types.Operator):
-    bl_idname = "relinker.merge_by_distance"
+    bl_idname = "lw_pannel.merge_by_distance"
     bl_label = "Fusionner par distance"
 
     def execute(self, context):
@@ -14,7 +14,7 @@ class RELINKER_OT_MergeByDistance(bpy.types.Operator):
 
 
 class RELINKER_OT_ClearCustomNormals(bpy.types.Operator):
-    bl_idname = "relinker.clear_custom_normals"
+    bl_idname = "lw_pannel.clear_custom_normals"
     bl_label = "Clear Custom Split Normals"
 
     def execute(self, context):

@@ -1,7 +1,7 @@
 import bpy
 
 class RELINKER_OT_IncreaseQuality(bpy.types.Operator):
-    bl_idname = "relinker.increase_quality"
+    bl_idname = "lw_pannel.increase_quality"
     bl_label = "Améliorer la qualité"
     bl_description = "Ajuste le niveau de subdivision selon le slider"
 
@@ -38,7 +38,7 @@ class RELINKER_OT_IncreaseQuality(bpy.types.Operator):
 
 
 class RELINKER_OT_ApplyQuality(bpy.types.Operator):
-    bl_idname = "relinker.apply_quality"
+    bl_idname = "lw_pannel.apply_quality"
     bl_label = "Appliquer la qualité"
     bl_description = "Applique le modificateur subdivision pour rendre la qualité permanente"
 

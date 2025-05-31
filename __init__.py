@@ -1,9 +1,9 @@
 bl_info = {
     "name": "LW ModelToGmodHelper",
-    "author": "Fratelo + ChatGPT",
-    "version": (1, 3),
-    "blender": (2, 80, 0),
-    "location": "View3D > Sidebar > Relinker",
+    "author": "LowWard",
+    "version": (0, 1),
+    "blender": (4, 4, 3),
+    "location": "View3D > Sidebar > LW / ModelToGmodHelper",
     "description": "Relink textures, génère des LODs, outils de nettoyage géométrique",
     "category": "Material",
 }

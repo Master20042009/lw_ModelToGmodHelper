@@ -2,7 +2,7 @@ import bpy
 import os
 
 class RELINKER_OT_RelinkTextures(bpy.types.Operator):
-    bl_idname = "relinker.relink_textures"
+    bl_idname = "lw_pannel.relink_textures"
     bl_label = "Relinker les textures"
 
     def execute(self, context):

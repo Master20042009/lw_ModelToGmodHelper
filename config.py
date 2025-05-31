@@ -9,6 +9,8 @@ from .separators import RELINKER_OT_SeparateSelected, RELINKER_OT_SeparateLoose
 from .cleanup import RELINKER_OT_MergeByDistance, RELINKER_OT_ClearCustomNormals
 from .quality import RELINKER_OT_IncreaseQuality, RELINKER_OT_ApplyQuality
 from .panel import RELINKER_PT_Panel
+from .texturecleaner import RELINKER_OT_RemoveUnusedMaterials #, RELINKER_OT_SelectObjectsWithSameMaterials
+from .updater import RELINKER_OT_UpdateAddon
 
 
 class RelinkerProperties(bpy.types.PropertyGroup):
@@ -43,4 +45,7 @@ classes = (
     RELINKER_OT_ClearCustomNormals,
     RELINKER_OT_IncreaseQuality,
     RELINKER_OT_ApplyQuality,
+    RELINKER_OT_RemoveUnusedMaterials,
+    RELINKER_OT_UpdateAddon,
+    # RELINKER_OT_SelectObjectsWithSameMaterials,
 )

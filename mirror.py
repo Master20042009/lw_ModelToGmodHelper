@@ -1,7 +1,7 @@
 import bpy
 
 class RELINKER_OT_MirrorObject(bpy.types.Operator):
-    bl_idname = "relinker.mirror_object"
+    bl_idname = "lw_pannel.mirror_object"
     bl_label = "Mirror + Preview"
 
     def execute(self, context):
