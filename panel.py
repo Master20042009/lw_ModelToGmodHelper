@@ -47,3 +47,9 @@ class RELINKER_PT_Panel(bpy.types.Panel):
 
         layout.separator()
         layout.operator("lw_pannel.update_addon", icon='FILE_REFRESH')
+
+        layout.separator()
+        layout.label(text="Animation", icon='ARMATURE_DATA')
+        layout.operator("lw_pannel.retarget_anim_auto", icon='ANIM_DATA')
+
+

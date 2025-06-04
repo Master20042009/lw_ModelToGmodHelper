@@ -11,6 +11,7 @@ from .quality import RELINKER_OT_IncreaseQuality, RELINKER_OT_ApplyQuality
 from .panel import RELINKER_PT_Panel
 from .texturecleaner import RELINKER_OT_RemoveUnusedMaterials #, RELINKER_OT_SelectObjectsWithSameMaterials
 from .updater import RELINKER_OT_UpdateAddon
+from .retargetanim import LW_OT_retarget_anim_auto
 
 
 class RelinkerProperties(bpy.types.PropertyGroup):
@@ -48,4 +49,5 @@ classes = (
     RELINKER_OT_RemoveUnusedMaterials,
     RELINKER_OT_UpdateAddon,
     # RELINKER_OT_SelectObjectsWithSameMaterials,
+    LW_OT_retarget_anim_auto,
 )
