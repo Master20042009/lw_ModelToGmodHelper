@@ -43,18 +43,16 @@ class RELINKER_OT_CreateLODs(bpy.types.Operator):
             copy = obj.copy()
             copy.data = obj.data.copy()
             copy.name = f"{obj.name}_{lod_name}"
+
+            # Lier le LOD à la collection correspondante avant de le rendre actif
+            lod_collection.objects.link(copy)
             bpy.context.view_layer.objects.active = copy
 
+            # Appliquer le modificateur Decimate
             mod = copy.modifiers.new(name="Decimate", type='DECIMATE')
             mod.ratio = ratio
             bpy.ops.object.modifier_apply(modifier=mod.name)
 
-            # Retirer le LOD de toutes les collections existantes
-            for col in copy.users_collection:
-                col.objects.unlink(copy)
-
-            # Ajouter le LOD à la collection correspondante
-            lod_collection.objects.link(copy)
 
         self.report({'INFO'}, "LODs créés dans des collections séparées.")
         return {'FINISHED'}
