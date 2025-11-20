@@ -24,6 +24,8 @@ class RELINKER_PT_Panel(bpy.types.Panel):
         row.prop(props, "mirror_axis_z")
         row = layout.row(align=True)
         row.prop(props, "mirror_axis_neg_x")
+        row.prop(props, "mirror_axis_neg_y")
+        row.prop(props, "mirror_axis_neg_z")
 
         layout.separator()
         layout.label(text="Cleanup :")
@@ -37,13 +39,13 @@ class RELINKER_PT_Panel(bpy.types.Panel):
 
         layout.separator()
         layout.operator("lw_pannel.remove_unused_materials", icon='X')
-        layout.operator("lw_pannel.select_objects_with_same_materials", icon='RESTRICT_SELECT_OFF')
+        # layout.operator("lw_pannel.select_objects_with_same_materials", icon='RESTRICT_SELECT_OFF')
 
         layout.label(text="Qualité du modèle (Subdivision)")
         layout.prop(props, "quality_level", slider=True)
         layout.operator("lw_pannel.increase_quality", icon='MOD_SUBSURF')
         layout.operator("lw_pannel.apply_quality", icon='FILE_TICK')
-        layout.operator("lw_pannel.select_objects_with_same_materials", icon='RESTRICT_SELECT_OFF')
+        # layout.operator("lw_pannel.select_objects_with_same_materials", icon='RESTRICT_SELECT_OFF')
 
         layout.separator()
         layout.operator("lw_pannel.update_addon", icon='FILE_REFRESH')
@@ -64,5 +66,5 @@ class RELINKER_PT_Panel(bpy.types.Panel):
         layout.operator("lw_pannel.rename_usdz_bones", icon='FONT_DATA')
         
         layout.separator()
-    layout.label(text="Collision Model (Convex Hull)")
-    layout.operator("lw_pannel.create_collision", icon='MESH_CUBE')
+        layout.label(text="Collision Model (Convex Hull)")
+        layout.operator("lw_pannel.create_collision", icon='MESH_CUBE')
