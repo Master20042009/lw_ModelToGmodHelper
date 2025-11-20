@@ -14,6 +14,7 @@ from .updater import RELINKER_OT_UpdateAddon
 from .retargetanim import LW_OT_retarget_anim_auto
 from .psk_category import LW_OT_RenamePSKBones, LW_OT_CorrectValveBoneRoll, LW_OT_ScaleToGmod
 from .usdz import LW_OT_RenameUSDZBones
+from .collision import RELINKER_OT_CreateCollision
 
 
 class RelinkerProperties(bpy.types.PropertyGroup):
@@ -56,4 +57,5 @@ classes = (
     LW_OT_CorrectValveBoneRoll,
     LW_OT_ScaleToGmod,
     LW_OT_RenameUSDZBones,
+    RELINKER_OT_CreateCollision,
 )

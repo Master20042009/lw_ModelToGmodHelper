@@ -63,3 +63,6 @@ class RELINKER_PT_Panel(bpy.types.Panel):
         layout.label(text="USDZ Tools", icon="OUTLINER_OB_ARMATURE")
         layout.operator("lw_pannel.rename_usdz_bones", icon='FONT_DATA')
         
+        layout.separator()
+    layout.label(text="Collision Model (Convex Hull)")
+    layout.operator("lw_pannel.create_collision", icon='MESH_CUBE')
