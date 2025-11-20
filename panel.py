@@ -52,4 +52,14 @@ class RELINKER_PT_Panel(bpy.types.Panel):
         layout.label(text="Animation", icon='ARMATURE_DATA')
         layout.operator("lw_pannel.retarget_anim_auto", icon='ANIM_DATA')
 
+        layout.separator()
+        layout.label(text="PSK Tools", icon='OUTLINER_OB_ARMATURE')
+        layout.operator("lw_pannel.fix_psk_bone_scale", icon='TOOL_SETTINGS')
+        layout.operator("lw_pannel.rename_psk_bones", icon='FONT_DATA')
+        layout.operator("lw_pannel.correct_valve_bone_roll", icon='ARMATURE_DATA')
+        layout.operator("lw_pannel.scale_to_gmod", icon='MOD_SUBSURF')
 
+        layout.separator()
+        layout.label(text="USDZ Tools", icon="OUTLINER_OB_ARMATURE")
+        layout.operator("lw_pannel.rename_usdz_bones", icon='FONT_DATA')
+        

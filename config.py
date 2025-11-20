@@ -12,6 +12,8 @@ from .panel import RELINKER_PT_Panel
 from .texturecleaner import RELINKER_OT_RemoveUnusedMaterials #, RELINKER_OT_SelectObjectsWithSameMaterials
 from .updater import RELINKER_OT_UpdateAddon
 from .retargetanim import LW_OT_retarget_anim_auto
+from .psk_category import LW_OT_RenamePSKBones, LW_OT_CorrectValveBoneRoll, LW_OT_ScaleToGmod
+from .usdz import LW_OT_RenameUSDZBones
 
 
 class RelinkerProperties(bpy.types.PropertyGroup):
@@ -50,4 +52,8 @@ classes = (
     RELINKER_OT_UpdateAddon,
     # RELINKER_OT_SelectObjectsWithSameMaterials,
     LW_OT_retarget_anim_auto,
+    LW_OT_RenamePSKBones,
+    LW_OT_CorrectValveBoneRoll,
+    LW_OT_ScaleToGmod,
+    LW_OT_RenameUSDZBones,
 )
