@@ -1,4 +1,6 @@
 import bpy
+from .compilation import validate_compilation_config
+
 
 class RELINKER_PT_Panel(bpy.types.Panel):
     bl_label = "LW ModelToGmodHelper"
@@ -39,13 +41,11 @@ class RELINKER_PT_Panel(bpy.types.Panel):
 
         layout.separator()
         layout.operator("lw_pannel.remove_unused_materials", icon='X')
-        # layout.operator("lw_pannel.select_objects_with_same_materials", icon='RESTRICT_SELECT_OFF')
 
         layout.label(text="Qualité du modèle (Subdivision)")
         layout.prop(props, "quality_level", slider=True)
         layout.operator("lw_pannel.increase_quality", icon='MOD_SUBSURF')
         layout.operator("lw_pannel.apply_quality", icon='FILE_TICK')
-        # layout.operator("lw_pannel.select_objects_with_same_materials", icon='RESTRICT_SELECT_OFF')
 
         layout.separator()
         layout.operator("lw_pannel.update_addon", icon='FILE_REFRESH')
@@ -68,3 +68,193 @@ class RELINKER_PT_Panel(bpy.types.Panel):
         layout.separator()
         layout.label(text="Collision Model (Convex Hull)")
         layout.operator("lw_pannel.create_collision", icon='MESH_CUBE')
+
+
+class COMPILATION_PT_MainPanel(bpy.types.Panel):
+    """Panel principal pour la compilation Source Engine"""
+    bl_label = "Source Compilation"
+    bl_idname = "COMPILATION_PT_main"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'lw_pannel'
+    bl_options = {'DEFAULT_CLOSED'}
+    
+    def draw(self, context):
+        layout = self.layout
+        props = context.scene.compilation_props
+        
+        # Configuration de base
+        box = layout.box()
+        box.label(text="Configuration", icon='SETTINGS')
+        box.prop(props, "game_name")
+        box.prop(props, "studiomdl_path", text="studiomdl.exe")
+        box.prop(props, "gameinfo_path", text="gameinfo.txt")
+        
+        if not validate_compilation_config(context):
+            box.label(text="⚠ Configuration incomplete", icon='ERROR')
+            return
+        
+        box.label(text="✓ Configuration valide", icon='CHECKMARK')
+        
+        # Model info
+        layout.separator()
+        box = layout.box()
+        box.label(text="Model Info", icon='OBJECT_DATA')
+        box.prop(props, "modelname", text="$modelname")
+        box.prop(props, "cdmaterials", text="$cdmaterials")
+        
+        # Bodies
+        layout.separator()
+        box = layout.box()
+        box.label(text="Bodies", icon='MESH_DATA')
+        
+        row = box.row()
+        row.template_list(
+            "COMPILATION_UL_BodyList", "",
+            context.scene, "body_list",
+            context.scene, "body_list_index",
+            rows=3
+        )
+        
+        col = row.column(align=True)
+        col.operator("lw_pannel.add_body", icon='ADD', text="")
+        col.operator("lw_pannel.remove_body", icon='REMOVE', text="")
+        
+        # Bouton de compilation principal
+        layout.separator()
+        row = layout.row()
+        row.scale_y = 2.0
+        row.operator("lw_pannel.compile_model", icon='PLAY')
+
+
+class COMPILATION_PT_CollisionPanel(bpy.types.Panel):
+    """Panel pour les options de collision"""
+    bl_label = "Collision Options"
+    bl_idname = "COMPILATION_PT_collision"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'lw_pannel'
+    bl_parent_id = "COMPILATION_PT_main"
+    bl_options = {'DEFAULT_CLOSED'}
+    
+    @classmethod
+    def poll(cls, context):
+        return validate_compilation_config(context)
+    
+    def draw(self, context):
+        layout = self.layout
+        props = context.scene.compilation_props
+        
+        layout.prop(props, "collision_mesh", text="Collision Mesh")
+        
+        if props.collision_mesh:
+            layout.separator()
+            layout.prop(props, "collision_concave")
+            layout.prop(props, "collision_mass")
+            layout.prop(props, "collision_maxconvex")
+
+
+class COMPILATION_PT_GeneralOptionsPanel(bpy.types.Panel):
+    """Panel pour les options générales"""
+    bl_label = "General Options"
+    bl_idname = "COMPILATION_PT_general"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'lw_pannel'
+    bl_parent_id = "COMPILATION_PT_main"
+    bl_options = {'DEFAULT_CLOSED'}
+    
+    @classmethod
+    def poll(cls, context):
+        return validate_compilation_config(context)
+    
+    def draw(self, context):
+        layout = self.layout
+        props = context.scene.compilation_props
+        
+        layout.prop(props, "staticprop")
+        layout.prop(props, "surfaceprop")
+        
+        layout.separator()
+        row = layout.row()
+        row.prop(props, "illumposition_enable", text="$illumposition")
+        if props.illumposition_enable:
+            row = layout.row()
+            row.prop(props, "illumposition", text="")
+        
+        layout.separator()
+        layout.prop(props, "constantdirectionallight")
+        layout.prop(props, "ambientboost")
+        layout.prop(props, "casttextureshadows")
+        
+        layout.separator()
+        row = layout.row()
+        row.prop(props, "origin_enable", text="$origin")
+        if props.origin_enable:
+            row = layout.row()
+            row.prop(props, "origin", text="")
+        
+        layout.separator()
+        layout.prop(props, "skipboneinbbox")
+
+
+class COMPILATION_PT_SequencesPanel(bpy.types.Panel):
+    """Panel pour les séquences d'animation"""
+    bl_label = "Sequences"
+    bl_idname = "COMPILATION_PT_sequences"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'lw_pannel'
+    bl_parent_id = "COMPILATION_PT_main"
+    bl_options = {'DEFAULT_CLOSED'}
+    
+    @classmethod
+    def poll(cls, context):
+        return validate_compilation_config(context)
+    
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        
+        row = layout.row()
+        row.template_list(
+            "COMPILATION_UL_SequenceList", "",
+            scene, "sequence_list",
+            scene, "sequence_list_index",
+            rows=3
+        )
+        
+        col = row.column(align=True)
+        col.operator("lw_pannel.add_sequence", icon='ADD', text="")
+        col.operator("lw_pannel.remove_sequence", icon='REMOVE', text="")
+        
+        # Détails de la séquence sélectionnée
+        if len(scene.sequence_list) > 0 and scene.sequence_list_index < len(scene.sequence_list):
+            seq = scene.sequence_list[scene.sequence_list_index]
+            
+            layout.separator()
+            box = layout.box()
+            box.label(text=f"Sequence: {seq.name}", icon='ANIM')
+            
+            box.prop(seq, "activity")
+            box.prop(seq, "activity_weight")
+            
+            row = box.row(align=True)
+            row.prop(seq, "fadein")
+            row.prop(seq, "fadeout")
+            
+            box.prop(seq, "fps")
+            
+            row = box.row(align=True)
+            row.prop(seq, "loop")
+            row.prop(seq, "autoplay")
+
+
+# Classes du panel à exporter
+panel_classes = (
+    RELINKER_PT_Panel,
+    COMPILATION_PT_MainPanel,
+    COMPILATION_PT_CollisionPanel,
+    COMPILATION_PT_GeneralOptionsPanel,
+    COMPILATION_PT_SequencesPanel,
+)
