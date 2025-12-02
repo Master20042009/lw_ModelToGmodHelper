@@ -14,9 +14,8 @@ from .retargetanim import LW_OT_retarget_anim_auto
 from .psk_category import LW_OT_RenamePSKBones, LW_OT_CorrectValveBoneRoll, LW_OT_ScaleToGmod
 from .usdz import LW_OT_RenameUSDZBones
 from .collision_convex import RELINKER_OT_CreateCollision
-from .compilastion import COMPILATION_OT_AddBody, COMPILATION_OT_RemoveBody, COMPILATION_OT_AddSequence, COMPILATION_OT_RemoveSequence, COMPILATION_OT_CompileModel, COMPILATION_UL_BodyList, COMPILATION_UL_SequenceList
 
-# Import des nouveaux modules de compilation
+# Import des modules de compilation (CORRIGÉ - ancien fichier mal orthographié supprimé)
 from .compilation import (
     CompilationProperties,
     BodyPropGroup,
