@@ -35,6 +35,7 @@ from .panel import (
     COMPILATION_PT_CollisionPanel,
     COMPILATION_PT_GeneralOptionsPanel,
     COMPILATION_PT_SequencesPanel,
+    COMPILATION_PT_PathsPanel,
 )
 
 
@@ -76,6 +77,7 @@ classes = (
     COMPILATION_PT_CollisionPanel,
     COMPILATION_PT_GeneralOptionsPanel,
     COMPILATION_PT_SequencesPanel,
+    COMPILATION_PT_PathsPanel,
     
     # Opérateurs originaux
     RELINKER_OT_RelinkTextures,

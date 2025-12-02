@@ -63,7 +63,8 @@ class CompilationProperties(bpy.types.PropertyGroup):
     collision_mesh: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Collision Mesh",
-        description="Mesh object used for collision"
+        description="Mesh object used for collision",
+        poll=lambda self, obj: obj.type == 'MESH'
     )
     
     collision_concave: bpy.props.BoolProperty(
@@ -146,6 +147,21 @@ class CompilationProperties(bpy.types.PropertyGroup):
         description="Skip bone in bounding box calculation",
         default=False
     )
+    
+    # Chemins personnalisés
+    smd_output_path: bpy.props.StringProperty(
+        name="SMD Output Path",
+        description="Custom path for SMD file export (leave empty for temp directory)",
+        subtype='DIR_PATH',
+        default=""
+    )
+    
+    model_output_path: bpy.props.StringProperty(
+        name="Model Output Path",
+        description="Custom path where compiled model files will be saved",
+        subtype='DIR_PATH',
+        default=""
+    )
 
 
 class BodyPropGroup(bpy.types.PropertyGroup):
@@ -158,7 +174,8 @@ class BodyPropGroup(bpy.types.PropertyGroup):
     mesh_object: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Mesh",
-        description="Mesh object for this body"
+        description="Mesh object for this body",
+        poll=lambda self, obj: obj.type == 'MESH'
     )
 
 
@@ -326,17 +343,29 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                 self.report({'ERROR'}, f"Body '{body.name}' has no valid mesh")
                 return {'CANCELLED'}
         
-        # Générer le QC
-        temp_path = bpy.app.tempdir
+        # Récupérer les chemins
+        game_dir = os.path.dirname(props.gameinfo_path)
+        
+        # Utiliser le chemin personnalisé pour SMD ou le répertoire temp
+        if props.smd_output_path and os.path.exists(props.smd_output_path):
+            temp_path = props.smd_output_path
+        else:
+            temp_path = bpy.app.tempdir
+        
         qc_path = os.path.join(temp_path, "model_compile.qc")
         
         try:
-            # Récupérer le chemin du jeu
-            game_dir = os.path.dirname(props.gameinfo_path)
+            print(f"[COMPILATION] Starting compilation...")
+            print(f"[COMPILATION] Game directory: {game_dir}")
+            print(f"[COMPILATION] SMD output path: {temp_path}")
+            if props.model_output_path:
+                print(f"[COMPILATION] Model output path: {props.model_output_path}")
             
             self.generate_qc(context, qc_path, temp_path)
             self.export_meshes(context, temp_path)
+            self.copy_files_to_game_dir(context, temp_path, game_dir)
             self.run_studiomdl(context, qc_path, game_dir)
+            
             self.report({'INFO'}, "Compilation successful!")
             return {'FINISHED'}
         except Exception as e:
@@ -357,10 +386,13 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             # $body ou $bodygroup
             if len(scene.body_list) == 1:
                 body = scene.body_list[0]
+                # Format: $body "body_name" "smd_file_name"
                 f.write(f'$body "{body.name}" "{body.name}_ref.smd"\n\n')
             else:
+                # Multiple bodies
                 f.write('$bodygroup "Body"\n{\n')
                 for body in scene.body_list:
+                    # Format: studio "smd_file_name"
                     f.write(f'\tstudio "{body.name}_ref.smd"\n')
                 f.write('}\n\n')
             
@@ -444,14 +476,43 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         # Exporter les bodies
         for body in scene.body_list:
             smd_path = os.path.join(temp_path, f"{body.name}_ref.smd")
-            print(f"Exporting body to: {smd_path}")
+            print(f"[COMPILATION] Exporting body to: {smd_path}")
             self.export_mesh_to_smd(body.mesh_object, smd_path)
         
         # Exporter la collision
         if scene.compilation_props.collision_mesh:
             smd_path = os.path.join(temp_path, "collision.smd")
-            print(f"Exporting collision to: {smd_path}")
+            print(f"[COMPILATION] Exporting collision to: {smd_path}")
             self.export_mesh_to_smd(scene.compilation_props.collision_mesh, smd_path)
+    
+    def copy_files_to_game_dir(self, context, temp_path, game_dir):
+        """Copie les fichiers SMD et QC vers le répertoire du jeu"""
+        import shutil
+        
+        scene = context.scene
+        
+        # Copier les fichiers SMD des bodies
+        for body in scene.body_list:
+            src = os.path.join(temp_path, f"{body.name}_ref.smd")
+            dst = os.path.join(game_dir, f"{body.name}_ref.smd")
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+                print(f"[COMPILATION] Copied: {src} -> {dst}")
+        
+        # Copier le fichier collision si présent
+        if scene.compilation_props.collision_mesh:
+            src = os.path.join(temp_path, "collision.smd")
+            dst = os.path.join(game_dir, "collision.smd")
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+                print(f"[COMPILATION] Copied: {src} -> {dst}")
+        
+        # Copier le QC
+        src = os.path.join(temp_path, "model_compile.qc")
+        dst = os.path.join(game_dir, "model_compile.qc")
+        if os.path.exists(src):
+            shutil.copy2(src, dst)
+            print(f"[COMPILATION] Copied: {src} -> {dst}")
     
     def export_mesh_to_smd(self, obj, path):
         """Exporte un mesh en SMD - adapté de SanjiMDL"""
@@ -528,30 +589,32 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         if not os.path.exists(game_dir):
             raise Exception(f"Game directory not found: {game_dir}")
         
-        # Vérifier que le fichier QC existe
-        if not os.path.exists(qc_path):
-            raise Exception(f"QC file not found: {qc_path}")
+        # Vérifier que le fichier QC existe dans le répertoire du jeu
+        qc_game_path = os.path.join(game_dir, "model_compile.qc")
+        if not os.path.exists(qc_game_path):
+            raise Exception(f"QC file not found: {qc_game_path}")
         
         # Vérifier que studiomdl.exe existe
         if not os.path.exists(props.studiomdl_path):
             raise Exception(f"studiomdl.exe not found: {props.studiomdl_path}")
         
-        print(f"[COMPILATION] studiomdl.exe path: {props.studiomdl_path}")
-        print(f"[COMPILATION] Game directory: {game_dir}")
-        print(f"[COMPILATION] QC file: {qc_path}")
+        print(f"[COMPILATION] studiomdl.exe: {props.studiomdl_path}")
+        print(f"[COMPILATION] Game dir: {game_dir}")
+        print(f"[COMPILATION] QC file: {qc_game_path}")
         
-        # Construire la commande exactement comme SanjiMDL
+        # Construire la commande - utiliser le chemin relatif dans game_dir
         studiomdl_args = [
             props.studiomdl_path,
             "-game", game_dir,
             "-nop4",
-            qc_path
+            "model_compile.qc"  # Utiliser le chemin relatif
         ]
         
         print(f"[COMPILATION] Running: {' '.join(studiomdl_args)}")
+        print(f"[COMPILATION] Working directory: {game_dir}")
         
-        # Exécuter sans capture pour voir les messages
-        result = subprocess.run(studiomdl_args)
+        # Exécuter depuis le répertoire du jeu
+        result = subprocess.run(studiomdl_args, cwd=game_dir)
         
         print(f"[COMPILATION] studiomdl.exe exit code: {result.returncode}")
         

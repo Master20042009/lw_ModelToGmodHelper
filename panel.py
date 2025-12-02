@@ -100,8 +100,8 @@ class COMPILATION_PT_MainPanel(bpy.types.Panel):
         layout.separator()
         box = layout.box()
         box.label(text="Model Info", icon='OBJECT_DATA')
-        box.prop(props, "modelname", text="$modelname")
-        box.prop(props, "cdmaterials", text="$cdmaterials")
+        layout.prop(props, "modelname", text="$modelname")
+        layout.prop(props, "cdmaterials", text="$cdmaterials")
         
         # Bodies
         layout.separator()
@@ -119,6 +119,18 @@ class COMPILATION_PT_MainPanel(bpy.types.Panel):
         col = row.column(align=True)
         col.operator("lw_pannel.add_body", icon='ADD', text="")
         col.operator("lw_pannel.remove_body", icon='REMOVE', text="")
+        
+        # Détails du body sélectionné
+        if len(context.scene.body_list) > 0 and context.scene.body_list_index < len(context.scene.body_list):
+            body = context.scene.body_list[context.scene.body_list_index]
+            
+            layout.separator()
+            box = layout.box()
+            box.label(text=f"Body: {body.name}", icon='MESH_DATA')
+            
+            box.prop(body, "name", text="Name")
+            # Utiliser prop avec type filter pour afficher seulement les Mesh
+            box.prop(body, "mesh_object", text="Mesh", icon='MESH_DATA')
         
         # Bouton de compilation principal
         layout.separator()
@@ -145,7 +157,7 @@ class COMPILATION_PT_CollisionPanel(bpy.types.Panel):
         layout = self.layout
         props = context.scene.compilation_props
         
-        layout.prop(props, "collision_mesh", text="Collision Mesh")
+        layout.prop(props, "collision_mesh", text="Collision Mesh", icon='MESH_DATA')
         
         if props.collision_mesh:
             layout.separator()
@@ -250,6 +262,34 @@ class COMPILATION_PT_SequencesPanel(bpy.types.Panel):
             row.prop(seq, "autoplay")
 
 
+class COMPILATION_PT_PathsPanel(bpy.types.Panel):
+    """Panel pour les chemins personnalisés"""
+    bl_label = "Custom Paths"
+    bl_idname = "COMPILATION_PT_paths"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'lw_pannel'
+    bl_parent_id = "COMPILATION_PT_main"
+    bl_options = {'DEFAULT_CLOSED'}
+    
+    @classmethod
+    def poll(cls, context):
+        return validate_compilation_config(context)
+    
+    def draw(self, context):
+        layout = self.layout
+        props = context.scene.compilation_props
+        
+        layout.label(text="SMD Files", icon='EXPORT')
+        layout.prop(props, "smd_output_path", text="SMD Output Path")
+        layout.label(text="Leave empty to use temp directory", icon='INFO')
+        
+        layout.separator()
+        layout.label(text="Compiled Model", icon='OUTPUT')
+        layout.prop(props, "model_output_path", text="Model Output Path")
+        layout.label(text="Leave empty to use game directory", icon='INFO')
+
+
 # Classes du panel à exporter
 panel_classes = (
     RELINKER_PT_Panel,
@@ -257,4 +297,5 @@ panel_classes = (
     COMPILATION_PT_CollisionPanel,
     COMPILATION_PT_GeneralOptionsPanel,
     COMPILATION_PT_SequencesPanel,
+    COMPILATION_PT_PathsPanel,
 )
