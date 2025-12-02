@@ -10,7 +10,7 @@ bl_info = {
 
 import bpy
 from . import config
-
+from .compilation import *
 
 def register():
     # Enregistrer toutes les classes
