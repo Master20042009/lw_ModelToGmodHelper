@@ -508,6 +508,14 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         props = context.scene.compilation_props
         game_dir = os.path.dirname(props.gameinfo_path)
         
+        # Vérifier que le chemin du jeu existe
+        if not os.path.exists(game_dir):
+            raise Exception(f"Game directory not found: {game_dir}")
+        
+        # Vérifier que le fichier QC existe
+        if not os.path.exists(qc_path):
+            raise Exception(f"QC file not found: {qc_path}")
+        
         args = [
             props.studiomdl_path,
             "-game", game_dir,
@@ -515,7 +523,12 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             qc_path
         ]
         
-        result = subprocess.run(args, capture_output=True, text=True)
+        result = subprocess.run(args, capture_output=True, text=True, cwd=game_dir)
+        
+        # Afficher la sortie complète pour le débogage
+        print(f"studiomdl output: {result.stdout}")
+        print(f"studiomdl errors: {result.stderr}")
         
         if result.returncode != 0:
-            raise Exception(f"studiomdl.exe failed: {result.stderr}")
+            error_msg = result.stderr if result.stderr else result.stdout
+            raise Exception(f"studiomdl.exe failed with code {result.returncode}: {error_msg}")
