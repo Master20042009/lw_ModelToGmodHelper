@@ -454,7 +454,9 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             self.export_mesh_to_smd(scene.compilation_props.collision_mesh, smd_path)
     
     def export_mesh_to_smd(self, obj, path):
-        """Exporte un mesh en SMD"""
+        """Exporte un mesh en SMD - adapté de SanjiMDL"""
+        from io import StringIO
+        
         # Sauvegarder le mode actuel
         current_mode = bpy.context.object.mode if bpy.context.object else 'OBJECT'
         if bpy.context.mode != 'OBJECT':
@@ -475,18 +477,20 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             f.write("end\n")
             f.write("skeleton\n")
             f.write("time 0\n")
-            f.write("0 0.0 0.0 0.0 0.0 0.0 0.0\n")
+            f.write("0 0 0 0 0 0 0\n")
             f.write("end\n")
             f.write("triangles\n")
             
-            # Triangles
+            # Construire le contenu des triangles
+            sb = StringIO()
+            has_materials = len(obj.material_slots) > 0
+            
             for tri in mesh.loop_triangles:
                 # Nom du matériau
-                mat_name = "default"
-                if len(obj.material_slots) > 0 and tri.material_index < len(obj.material_slots):
+                if has_materials and tri.material_index < len(obj.material_slots):
                     mat_name = obj.material_slots[tri.material_index].name
-                
-                f.write(f"{mat_name}\n")
+                else:
+                    mat_name = "default"
                 
                 # Pour chaque vertex du triangle
                 for i in range(3):
@@ -500,11 +504,17 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                     else:
                         uv = (0.0, 0.0)
                     
-                    f.write(f"0  {pos.x:.6f} {pos.y:.6f} {pos.z:.6f}  ")
-                    f.write(f"{normal.x:.6f} {normal.y:.6f} {normal.z:.6f}  ")
-                    f.write(f"{uv[0]:.6f} {uv[1]:.6f} 0\n")
+                    # Format: material_name
+                    # 0 x y z nx ny nz u v ???
+                    sb.write(f"{mat_name}\n")
+                    sb.write(f"0  {pos.x:.6f} {pos.y:.6f} {pos.z:.6f}  ")
+                    sb.write(f"{normal.x:.6f} {normal.y:.6f} {normal.z:.6f}  ")
+                    sb.write(f"{uv[0]:.6f} {uv[1]:.6f} 0\n")
             
+            f.write(sb.getvalue())
             f.write("end\n")
+        
+        print(f"[COMPILATION] Exported mesh to: {path}")
         
         # Restaurer le mode
         if current_mode != 'OBJECT' and bpy.context.object:
@@ -522,18 +532,23 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         if not os.path.exists(qc_path):
             raise Exception(f"QC file not found: {qc_path}")
         
+        # Vérifier que studiomdl.exe existe
+        if not os.path.exists(props.studiomdl_path):
+            raise Exception(f"studiomdl.exe not found: {props.studiomdl_path}")
+        
+        print(f"[COMPILATION] studiomdl.exe path: {props.studiomdl_path}")
+        print(f"[COMPILATION] Game directory: {game_dir}")
+        print(f"[COMPILATION] QC file: {qc_path}")
+        
         # Construire la commande exactement comme SanjiMDL
         studiomdl_args = [
             props.studiomdl_path,
             "-game", game_dir,
-            "-nop4"
+            "-nop4",
+            qc_path
         ]
         
-        studiomdl_args.append(qc_path)
-        
-        print(f"[COMPILATION] Running studiomdl.exe")
-        print(f"[COMPILATION] Command: {' '.join(studiomdl_args)}")
-        print(f"[COMPILATION] Working directory: {game_dir}")
+        print(f"[COMPILATION] Running: {' '.join(studiomdl_args)}")
         
         # Exécuter sans capture pour voir les messages
         result = subprocess.run(studiomdl_args)
