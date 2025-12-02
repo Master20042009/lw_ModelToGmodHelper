@@ -331,9 +331,12 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         qc_path = os.path.join(temp_path, "model_compile.qc")
         
         try:
-            self.generate_qc(context, qc_path)
-            self.export_meshes(context)
-            self.run_studiomdl(context, qc_path)
+            # Récupérer le chemin du jeu
+            game_dir = os.path.dirname(props.gameinfo_path)
+            
+            self.generate_qc(context, qc_path, temp_path)
+            self.export_meshes(context, temp_path)
+            self.run_studiomdl(context, qc_path, game_dir)
             self.report({'INFO'}, "Compilation successful!")
             return {'FINISHED'}
         except Exception as e:
@@ -342,7 +345,7 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             traceback.print_exc()
             return {'CANCELLED'}
     
-    def generate_qc(self, context, qc_path):
+    def generate_qc(self, context, qc_path, temp_path):
         """Génère le fichier QC avec toutes les options"""
         scene = context.scene
         props = scene.compilation_props
@@ -431,19 +434,23 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                 f.write('\t$rootbone " "\n')
                 f.write('}\n')
     
-    def export_meshes(self, context):
+    def export_meshes(self, context, temp_path):
         """Exporte tous les meshes en SMD"""
         scene = context.scene
-        temp_path = bpy.app.tempdir
+        
+        # Créer le répertoire temp s'il n'existe pas
+        os.makedirs(temp_path, exist_ok=True)
         
         # Exporter les bodies
         for body in scene.body_list:
             smd_path = os.path.join(temp_path, f"{body.name}_ref.smd")
+            print(f"Exporting body to: {smd_path}")
             self.export_mesh_to_smd(body.mesh_object, smd_path)
         
         # Exporter la collision
         if scene.compilation_props.collision_mesh:
             smd_path = os.path.join(temp_path, "collision.smd")
+            print(f"Exporting collision to: {smd_path}")
             self.export_mesh_to_smd(scene.compilation_props.collision_mesh, smd_path)
     
     def export_mesh_to_smd(self, obj, path):
@@ -503,10 +510,9 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         if current_mode != 'OBJECT' and bpy.context.object:
             bpy.ops.object.mode_set(mode=current_mode)
     
-    def run_studiomdl(self, context, qc_path):
-        """Exécute studiomdl.exe"""
+    def run_studiomdl(self, context, qc_path, game_dir):
+        """Exécute studiomdl.exe - adapté de SanjiMDL"""
         props = context.scene.compilation_props
-        game_dir = os.path.dirname(props.gameinfo_path)
         
         # Vérifier que le chemin du jeu existe
         if not os.path.exists(game_dir):
@@ -516,19 +522,23 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         if not os.path.exists(qc_path):
             raise Exception(f"QC file not found: {qc_path}")
         
-        args = [
+        # Construire la commande exactement comme SanjiMDL
+        studiomdl_args = [
             props.studiomdl_path,
             "-game", game_dir,
-            "-nop4",
-            qc_path
+            "-nop4"
         ]
         
-        result = subprocess.run(args, capture_output=True, text=True, cwd=game_dir)
+        studiomdl_args.append(qc_path)
         
-        # Afficher la sortie complète pour le débogage
-        print(f"studiomdl output: {result.stdout}")
-        print(f"studiomdl errors: {result.stderr}")
+        print(f"[COMPILATION] Running studiomdl.exe")
+        print(f"[COMPILATION] Command: {' '.join(studiomdl_args)}")
+        print(f"[COMPILATION] Working directory: {game_dir}")
+        
+        # Exécuter sans capture pour voir les messages
+        result = subprocess.run(studiomdl_args)
+        
+        print(f"[COMPILATION] studiomdl.exe exit code: {result.returncode}")
         
         if result.returncode != 0:
-            error_msg = result.stderr if result.stderr else result.stdout
-            raise Exception(f"studiomdl.exe failed with code {result.returncode}: {error_msg}")
+            raise Exception(f"studiomdl.exe failed with exit code {result.returncode}")
