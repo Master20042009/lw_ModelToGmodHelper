@@ -306,6 +306,31 @@ class COMPILATION_PT_SequencesPanel(bpy.types.Panel):
             else:  # ARMATURE
                 box.prop(seq, "animation_armature", text="Armature")
                 box.label(text="Select armature with animation data", icon='INFO')
+            
+            box.separator()
+            box.label(text="Sequence Options", icon='SETTINGS')
+            
+            # Activity
+            row = box.row()
+            row.prop(seq, "enable_activity", text="")
+            row.prop(seq, "activity", text="Activity")
+            if seq.enable_activity:
+                box.prop(seq, "activity_weight", text="Activity Weight (0/1)")
+            
+            # Fade in
+            row = box.row()
+            row.prop(seq, "enable_fadein", text="")
+            row.prop(seq, "fadein", text="Fade In (0-10)")
+            
+            # Fade out
+            row = box.row()
+            row.prop(seq, "enable_fadeout", text="")
+            row.prop(seq, "fadeout", text="Fade Out (0-10)")
+            
+            # FPS
+            row = box.row()
+            row.prop(seq, "enable_fps", text="")
+            row.prop(seq, "fps", text="FPS (0-180)")
 
 
 class COMPILATION_PT_PathsPanel(bpy.types.Panel):

@@ -291,6 +291,69 @@ class SequencePropGroup(bpy.types.PropertyGroup):
         description="Armature with animations",
         poll=lambda self, obj: obj.type == 'ARMATURE'
     )
+    
+    # Sequence options
+    enable_activity: bpy.props.BoolProperty(
+        name="Enable Activity",
+        description="Enable activity parameter",
+        default=False
+    )
+    
+    activity: bpy.props.StringProperty(
+        name="Activity",
+        description="Activity type",
+        default=""
+    )
+    
+    activity_weight: bpy.props.IntProperty(
+        name="Activity Weight",
+        description="Activity weight (0 or 1)",
+        default=0,
+        min=0,
+        max=1
+    )
+    
+    enable_fadein: bpy.props.BoolProperty(
+        name="Enable Fade In",
+        description="Enable fade in parameter",
+        default=False
+    )
+    
+    fadein: bpy.props.IntProperty(
+        name="Fade In",
+        description="Fade in duration (0-10)",
+        default=0,
+        min=0,
+        max=10
+    )
+    
+    enable_fadeout: bpy.props.BoolProperty(
+        name="Enable Fade Out",
+        description="Enable fade out parameter",
+        default=False
+    )
+    
+    fadeout: bpy.props.IntProperty(
+        name="Fade Out",
+        description="Fade out duration (0-10)",
+        default=0,
+        min=0,
+        max=10
+    )
+    
+    enable_fps: bpy.props.BoolProperty(
+        name="Enable FPS",
+        description="Enable fps parameter",
+        default=True
+    )
+    
+    fps: bpy.props.IntProperty(
+        name="FPS",
+        description="Frames per second (0-180)",
+        default=30,
+        min=0,
+        max=180
+    )
 
 
 class COMPILATION_UL_BodyList(bpy.types.UIList):
@@ -489,7 +552,23 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                     if seq.enabled:
                         f.write(f'$sequence "{seq.name}" {{\n')
                         f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
-                        f.write('\tfps 30\n')
+                        
+                        # Activity
+                        if seq.enable_activity and seq.activity:
+                            f.write(f'\tactivity "{seq.activity}" {seq.activity_weight}\n')
+                        
+                        # Fade in
+                        if seq.enable_fadein:
+                            f.write(f'\tfadein {seq.fadein}\n')
+                        
+                        # Fade out
+                        if seq.enable_fadeout:
+                            f.write(f'\tfadeout {seq.fadeout}\n')
+                        
+                        # FPS
+                        if seq.enable_fps:
+                            f.write(f'\tfps {seq.fps}\n')
+                        
                         f.write('}\n\n')
             else:
                 # Séquence par défaut si aucune séquence n'est définie
