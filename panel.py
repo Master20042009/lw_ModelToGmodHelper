@@ -161,8 +161,46 @@ class COMPILATION_PT_CollisionPanel(bpy.types.Panel):
         
         if props.collision_mesh:
             layout.separator()
-            layout.prop(props, "collision_concave")
-            layout.prop(props, "collision_mass")
+            layout.prop(props, "collision_type", text="Type")
+            
+            layout.separator()
+            
+            if props.collision_type == 'MODEL':
+                # Collision Model options
+                layout.label(text="Collision Model Options", icon='MESH_CUBE')
+                
+                row = layout.row()
+                row.prop(props, "collision_enable_mass", text="")
+                row.prop(props, "collision_mass", text="Mass (0-255)")
+                
+                row = layout.row()
+                row.prop(props, "collision_enable_maxconvex", text="")
+                row.prop(props, "collision_maxconvexpieces", text="Max Convex Pieces")
+                
+                layout.prop(props, "collision_concave", text="Concave")
+            else:
+                # Collision Joints options
+                layout.label(text="Collision Joints Options", icon='ARMATURE_DATA')
+                
+                row = layout.row()
+                row.prop(props, "collision_enable_joints_mass", text="")
+                row.prop(props, "collision_joints_mass", text="Mass (0-255)")
+                
+                row = layout.row()
+                row.prop(props, "collision_enable_joints_rootbone", text="")
+                row.prop(props, "collision_joints_rootbone", text="Root Bone")
+                
+                row = layout.row()
+                row.prop(props, "collision_enable_joints_inertia", text="")
+                row.prop(props, "collision_joints_inertia", text="Inertia")
+                
+                row = layout.row()
+                row.prop(props, "collision_enable_joints_damping", text="")
+                row.prop(props, "collision_joints_damping", text="Damping")
+                
+                row = layout.row()
+                row.prop(props, "collision_enable_joints_rotdamping", text="")
+                row.prop(props, "collision_joints_rotdamping", text="Rotation Damping")
             layout.prop(props, "collision_maxconvex")
 
 

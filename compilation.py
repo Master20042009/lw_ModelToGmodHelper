@@ -125,6 +125,118 @@ class CompilationProperties(bpy.types.PropertyGroup):
         description="Skip bone in bounding box calculation",
         default=False
     )
+    
+    # Options de collision
+    collision_type: bpy.props.EnumProperty(
+        name="Collision Type",
+        description="Type of collision model",
+        items=[
+            ('MODEL', "Collision Model (phy)", "Use collision model with convex hulls"),
+            ('JOINTS', "Collision Joints", "Use collision joints for ragdoll")
+        ],
+        default='MODEL'
+    )
+    
+    # Collision Model options
+    collision_mass: bpy.props.IntProperty(
+        name="Mass",
+        description="Mass in kg (0-255)",
+        default=0,
+        min=0,
+        max=255
+    )
+    
+    collision_enable_mass: bpy.props.BoolProperty(
+        name="Enable Mass",
+        description="Enable mass parameter",
+        default=False
+    )
+    
+    collision_maxconvexpieces: bpy.props.IntProperty(
+        name="Max Convex Pieces",
+        description="Maximum convex pieces (0-65536)",
+        default=0,
+        min=0,
+        max=65536
+    )
+    
+    collision_enable_maxconvex: bpy.props.BoolProperty(
+        name="Enable Max Convex Pieces",
+        description="Enable max convex pieces parameter",
+        default=False
+    )
+    
+    collision_concave: bpy.props.BoolProperty(
+        name="Concave",
+        description="Use concave collision",
+        default=False
+    )
+    
+    # Collision Joints options
+    collision_joints_mass: bpy.props.IntProperty(
+        name="Joints Mass",
+        description="Mass for joints (0-255)",
+        default=0,
+        min=0,
+        max=255
+    )
+    
+    collision_enable_joints_mass: bpy.props.BoolProperty(
+        name="Enable Joints Mass",
+        description="Enable mass for joints",
+        default=False
+    )
+    
+    collision_joints_rootbone: bpy.props.StringProperty(
+        name="Root Bone",
+        description="Name of the root bone for joints",
+        default=""
+    )
+    
+    collision_enable_joints_rootbone: bpy.props.BoolProperty(
+        name="Enable Root Bone",
+        description="Enable root bone parameter",
+        default=False
+    )
+    
+    collision_joints_inertia: bpy.props.FloatProperty(
+        name="Inertia",
+        description="Inertia value",
+        default=2.0,
+        min=0.0
+    )
+    
+    collision_enable_joints_inertia: bpy.props.BoolProperty(
+        name="Enable Inertia",
+        description="Enable inertia parameter",
+        default=False
+    )
+    
+    collision_joints_damping: bpy.props.FloatProperty(
+        name="Damping",
+        description="Damping value",
+        default=0.01,
+        min=0.0
+    )
+    
+    collision_enable_joints_damping: bpy.props.BoolProperty(
+        name="Enable Damping",
+        description="Enable damping parameter",
+        default=False
+    )
+    
+    collision_joints_rotdamping: bpy.props.FloatProperty(
+        name="Rotation Damping",
+        description="Rotation damping value",
+        default=0.40,
+        min=0.0
+    )
+    
+    collision_enable_joints_rotdamping: bpy.props.BoolProperty(
+        name="Enable Rotation Damping",
+        description="Enable rotation damping parameter",
+        default=False
+    )
 
 
 class BodyPropGroup(bpy.types.PropertyGroup):
@@ -388,10 +500,32 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             
             # Collision
             if props.collision_mesh and props.collision_mesh.type == 'MESH':
-                f.write('$collisionmodel    "collision.smd"\n')
-                f.write('{\n')
-                f.write('\t$concave\n')
-                f.write('}\n')
+                if props.collision_type == 'MODEL':
+                    # Collision Model
+                    f.write('$collisionmodel    "phy"\n')
+                    f.write('{\n')
+                    if props.collision_enable_mass:
+                        f.write(f'\t$mass {props.collision_mass}\n')
+                    if props.collision_enable_maxconvex:
+                        f.write(f'\t$maxconvexpieces {props.collision_maxconvexpieces}\n')
+                    if props.collision_concave:
+                        f.write('\t$concave\n')
+                    f.write('}\n')
+                else:
+                    # Collision Joints
+                    f.write('$collisionjoints\n')
+                    f.write('{\n')
+                    if props.collision_enable_joints_mass:
+                        f.write(f'\t$mass {props.collision_joints_mass}\n')
+                    if props.collision_enable_joints_rootbone and props.collision_joints_rootbone:
+                        f.write(f'\t$rootbone "{props.collision_joints_rootbone}"\n')
+                    if props.collision_enable_joints_inertia:
+                        f.write(f'\t$inertia {props.collision_joints_inertia:.2f}\n')
+                    if props.collision_enable_joints_damping:
+                        f.write(f'\t$damping {props.collision_joints_damping:.2f}\n')
+                    if props.collision_enable_joints_rotdamping:
+                        f.write(f'\t$rotdamping {props.collision_joints_rotdamping:.2f}\n')
+                    f.write('}\n')
     
     def export_meshes(self, context, temp_path):
         """Exporte tous les meshes en SMD"""
