@@ -744,6 +744,7 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         scene = context.scene
         os.makedirs(temp_path, exist_ok=True)
         
+        # Exporter les bodies
         for body in scene.body_list:
             smd_path = os.path.join(temp_path, f"{body.name}_ref.smd")
             # body.mesh_object est maintenant une Collection, on doit récupérer les meshes dedans
@@ -753,6 +754,26 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                 # Fallback si c'est directement un objet mesh (ancienne config)
                 self.export_mesh_to_smd(body.mesh_object, smd_path, False)
         
+        # Exporter les modèles LOD
+        for lod in scene.lod_list:
+            if lod.replace_model_from_obj:
+                smd_path = os.path.join(temp_path, f"{lod.replace_model_from_obj.name}.smd")
+                self.export_mesh_to_smd(lod.replace_model_from_obj, smd_path, False)
+            
+            if lod.replace_model_to_obj:
+                smd_path = os.path.join(temp_path, f"{lod.replace_model_to_obj.name}.smd")
+                self.export_mesh_to_smd(lod.replace_model_to_obj, smd_path, False)
+        
+        # Exporter les modèles shadowlod
+        if scene.compilation_props.shadowlod_replace_from_obj:
+            smd_path = os.path.join(temp_path, f"{scene.compilation_props.shadowlod_replace_from_obj.name}.smd")
+            self.export_mesh_to_smd(scene.compilation_props.shadowlod_replace_from_obj, smd_path, False)
+        
+        if scene.compilation_props.shadowlod_replace_to_obj:
+            smd_path = os.path.join(temp_path, f"{scene.compilation_props.shadowlod_replace_to_obj.name}.smd")
+            self.export_mesh_to_smd(scene.compilation_props.shadowlod_replace_to_obj, smd_path, False)
+        
+        # Exporter la collision mesh
         if scene.compilation_props.collision_mesh:
             smd_path = os.path.join(temp_path, "collision.smd")
             self.export_mesh_to_smd(scene.compilation_props.collision_mesh, smd_path, True)
@@ -761,18 +782,48 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         """Copie les fichiers SMD et QC vers le répertoire du jeu"""
         scene = context.scene
         
+        # Copier les bodies
         for body in scene.body_list:
             src = os.path.join(temp_path, f"{body.name}_ref.smd")
             dst = os.path.join(game_dir, f"{body.name}_ref.smd")
             if os.path.exists(src):
                 shutil.copy2(src, dst)
         
+        # Copier les modèles LOD
+        for lod in scene.lod_list:
+            if lod.replace_model_from_obj:
+                src = os.path.join(temp_path, f"{lod.replace_model_from_obj.name}.smd")
+                dst = os.path.join(game_dir, f"{lod.replace_model_from_obj.name}.smd")
+                if os.path.exists(src):
+                    shutil.copy2(src, dst)
+            
+            if lod.replace_model_to_obj:
+                src = os.path.join(temp_path, f"{lod.replace_model_to_obj.name}.smd")
+                dst = os.path.join(game_dir, f"{lod.replace_model_to_obj.name}.smd")
+                if os.path.exists(src):
+                    shutil.copy2(src, dst)
+        
+        # Copier les modèles shadowlod
+        if scene.compilation_props.shadowlod_replace_from_obj:
+            src = os.path.join(temp_path, f"{scene.compilation_props.shadowlod_replace_from_obj.name}.smd")
+            dst = os.path.join(game_dir, f"{scene.compilation_props.shadowlod_replace_from_obj.name}.smd")
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+        
+        if scene.compilation_props.shadowlod_replace_to_obj:
+            src = os.path.join(temp_path, f"{scene.compilation_props.shadowlod_replace_to_obj.name}.smd")
+            dst = os.path.join(game_dir, f"{scene.compilation_props.shadowlod_replace_to_obj.name}.smd")
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+        
+        # Copier la collision
         if scene.compilation_props.collision_mesh:
             src = os.path.join(temp_path, "collision.smd")
             dst = os.path.join(game_dir, "collision.smd")
             if os.path.exists(src):
                 shutil.copy2(src, dst)
         
+        # Copier le QC
         src = os.path.join(temp_path, "model_compile.qc")
         dst = os.path.join(game_dir, "model_compile.qc")
         if os.path.exists(src):
