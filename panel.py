@@ -410,8 +410,8 @@ class COMPILATION_PT_LODPanel(bpy.types.Panel):
             
             layout.separator()
             layout.label(text="Model Replacement", icon='MESH_DATA')
-            layout.prop(lod, "replace_model_from", text="From (e.g., mesh1_lod0)")
-            layout.prop(lod, "replace_model_to", text="To (e.g., mesh1_lod2)")
+            layout.prop(lod, "replace_model_from_obj", text="From Model")
+            layout.prop(lod, "replace_model_to_obj", text="To Model")
             
             layout.separator()
             layout.label(text="Material Replacement", icon='MATERIAL')

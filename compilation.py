@@ -245,17 +245,20 @@ class CompilationProperties(bpy.types.PropertyGroup):
         default=False
     )
     
-    shadowlod_replace_from: bpy.props.StringProperty(
+    shadowlod_replace_from_obj: bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name="Shadow LOD From",
-        description="Original mesh name for shadow LOD (e.g., mesh1_lod0)",
-        default=""
+        description="Original mesh object for shadow LOD",
+        poll=lambda self, obj: obj.type == 'MESH'
     )
     
-    shadowlod_replace_to: bpy.props.StringProperty(
+    shadowlod_replace_to_obj: bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name="Shadow LOD To",
-        description="Replacement mesh name for shadow LOD (e.g., mesh1_lod5)",
-        default=""
+        description="Replacement mesh object for shadow LOD",
+        poll=lambda self, obj: obj.type == 'MESH'
     )
+
 
 class BodyPropGroup(bpy.types.PropertyGroup):
     """Groupe de propriétés pour un $body"""
@@ -384,16 +387,19 @@ class LODPropGroup(bpy.types.PropertyGroup):
         max=65535
     )
     
-    replace_model_from: bpy.props.StringProperty(
+    # Model replacements using mesh objects
+    replace_model_from_obj: bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name="From Model",
-        description="Original mesh name to replace (e.g., mesh1_lod0)",
-        default=""
+        description="Original mesh object to replace",
+        poll=lambda self, obj: obj.type == 'MESH'
     )
     
-    replace_model_to: bpy.props.StringProperty(
+    replace_model_to_obj: bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name="To Model",
-        description="Replacement mesh name (e.g., mesh1_lod2)",
-        default=""
+        description="Replacement mesh object",
+        poll=lambda self, obj: obj.type == 'MESH'
     )
     
     enable_replace_material: bpy.props.BoolProperty(
@@ -679,10 +685,10 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             # LOD Levels
             if len(scene.lod_list) > 0:
                 for lod in scene.lod_list:
-                    if lod.replace_model_from and lod.replace_model_to:
+                    if lod.replace_model_from_obj and lod.replace_model_to_obj:
                         f.write(f'$lod {lod.lod_level}\n')
                         f.write('{\n')
-                        f.write(f'\treplacemodel "{lod.replace_model_from}" "{lod.replace_model_to}"\n')
+                        f.write(f'\treplacemodel "{lod.replace_model_from_obj.name}" "{lod.replace_model_to_obj.name}"\n')
                         
                         if lod.enable_replace_material and lod.replace_material_from and lod.replace_material_to:
                             f.write(f'\treplacematerial "{lod.replace_material_from}" "{lod.replace_material_to}"\n')
@@ -690,10 +696,10 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                         f.write('}\n\n')
             
             # Shadow LOD (option indépendante)
-            if props.enable_shadowlod and props.shadowlod_replace_from and props.shadowlod_replace_to:
+            if props.enable_shadowlod and props.shadowlod_replace_from_obj and props.shadowlod_replace_to_obj:
                 f.write('$shadowlod\n')
                 f.write('{\n')
-                f.write(f'\treplacemodel "{props.shadowlod_replace_from}" "{props.shadowlod_replace_to}"\n')
+                f.write(f'\treplacemodel "{props.shadowlod_replace_from_obj.name}" "{props.shadowlod_replace_to_obj.name}"\n')
                 f.write('}\n\n')
             
             # Collision
