@@ -455,8 +455,11 @@ class COMPILATION_UL_LODList(bpy.types.UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             row = layout.row(align=True)
             row.label(text=f"LOD {item.lod_level}", icon='MOD_DECIM')
-            row.prop(item, "replace_model_from", text="From")
-            row.prop(item, "replace_model_to", text="To")
+            
+            from_name = item.replace_model_from_obj.name if item.replace_model_from_obj else "None"
+            to_name = item.replace_model_to_obj.name if item.replace_model_to_obj else "None"
+            row.label(text=f"From: {from_name}")
+            row.label(text=f"To: {to_name}")
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
             layout.label(text="", icon='MOD_DECIM')
