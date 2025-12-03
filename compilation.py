@@ -345,7 +345,12 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         
         for body in scene.body_list:
             smd_path = os.path.join(temp_path, f"{body.name}_ref.smd")
-            self.export_mesh_to_smd(body.mesh_object, smd_path, False)
+            # body.mesh_object est maintenant une Collection, on doit récupérer les meshes dedans
+            if body.mesh_object and isinstance(body.mesh_object, bpy.types.Collection):
+                self.export_collection_to_smd(body.mesh_object, smd_path, False)
+            elif body.mesh_object and body.mesh_object.type == 'MESH':
+                # Fallback si c'est directement un objet mesh (ancienne config)
+                self.export_mesh_to_smd(body.mesh_object, smd_path, False)
         
         if scene.compilation_props.collision_mesh:
             smd_path = os.path.join(temp_path, "collision.smd")
@@ -371,6 +376,48 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         dst = os.path.join(game_dir, "model_compile.qc")
         if os.path.exists(src):
             shutil.copy2(src, dst)
+    
+    def export_collection_to_smd(self, collection, path, is_collision_smd):
+        """Exporte tous les meshes d'une collection en SMD"""
+        # Récupérer tous les objets mesh de la collection
+        mesh_objects = [obj for obj in collection.all_objects if obj.type == 'MESH']
+        
+        if not mesh_objects:
+            raise Exception(f"No mesh objects found in collection '{collection.name}'")
+        
+        current_mode = bpy.context.object.mode if bpy.context.object else 'OBJECT'
+        if bpy.context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        
+        # Écrire l'en-tête du SMD
+        with open(path, "w") as f:
+            f.write("version 1\nnodes\n0 \"root\" -1\nend\nskeleton\ntime 0\n0 0 0 0 0 0 0\nend\ntriangles\n")
+            
+            sb = StringIO()
+            
+            # Exporter chaque mesh
+            for obj in mesh_objects:
+                depsgraph = bpy.context.evaluated_depsgraph_get()
+                object_eval = obj.evaluated_get(depsgraph)
+                mesh = object_eval.to_mesh()
+                mesh.calc_loop_triangles()
+                mesh.transform(obj.matrix_world)
+                
+                has_materials = len(obj.material_slots) > 0
+                
+                if is_collision_smd:
+                    self.export_mesh_smd_collision(sb, mesh)
+                else:
+                    if has_materials:
+                        self.export_mesh_smd_with_materials(sb, obj, mesh)
+                    else:
+                        self.export_mesh_smd_no_materials(sb, mesh)
+            
+            f.write(sb.getvalue())
+            f.write("end\n")
+        
+        if current_mode != 'OBJECT' and bpy.context.object:
+            bpy.ops.object.mode_set(mode=current_mode)
     
     def export_mesh_to_smd(self, obj, path, is_collision_smd):
         """Exporte un mesh en SMD - adapté de SanjiMDL"""
