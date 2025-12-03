@@ -740,9 +740,10 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             
             # Collision
             if props.collision_mesh and props.collision_mesh.type == 'MESH':
+                collision_filename = props.collision_mesh.name
                 if props.collision_type == 'MODEL':
                     # Collision Model
-                    f.write('$collisionmodel    "phy"\n')
+                    f.write(f'$collisionmodel    "{collision_filename}"\n')
                     f.write('{\n')
                     if props.collision_enable_mass:
                         f.write(f'\t$mass {props.collision_mass}\n')
@@ -753,7 +754,7 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                     f.write('}\n')
                 else:
                     # Collision Joints
-                    f.write('$collisionjoints\n')
+                    f.write(f'$collisionjoints\n')
                     f.write('{\n')
                     if props.collision_enable_joints_mass:
                         f.write(f'\t$mass {props.collision_joints_mass}\n')
