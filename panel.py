@@ -184,8 +184,37 @@ class COMPILATION_PT_GeneralOptionsPanel(bpy.types.Panel):
         layout = self.layout
         props = context.scene.compilation_props
         
+        # Options basiques
         layout.prop(props, "staticprop")
         layout.prop(props, "surfaceprop")
+        
+        layout.separator()
+        layout.label(text="Lighting", icon='LIGHT')
+        
+        # Illum position
+        row = layout.row(align=True)
+        row.prop(props, "illumposition_x", text="Illum X")
+        row.prop(props, "illumposition_y", text="Y")
+        row.prop(props, "illumposition_z", text="Z")
+        
+        layout.prop(props, "constantdirectionallight", text="Directional Light")
+        layout.prop(props, "ambientboost", text="Ambient Boost")
+        
+        layout.separator()
+        layout.label(text="Rendering", icon='SHADING_SOLID')
+        layout.prop(props, "casttextureshadows", text="Cast Texture Shadows")
+        
+        layout.separator()
+        layout.label(text="Position", icon='EMPTY_DATA')
+        
+        # Origin
+        row = layout.row(align=True)
+        row.prop(props, "origin_x", text="Origin X")
+        row.prop(props, "origin_y", text="Y")
+        row.prop(props, "origin_z", text="Z")
+        
+        layout.separator()
+        layout.prop(props, "skipboneinbbox", text="Skip Bone In Bbox")
 
 
 class COMPILATION_PT_SequencesPanel(bpy.types.Panel):

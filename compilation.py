@@ -91,6 +91,40 @@ class CompilationProperties(bpy.types.PropertyGroup):
         subtype='DIR_PATH',
         default=""
     )
+    
+    # Options supplémentaires pour le QC
+    illumposition_x: bpy.props.FloatProperty(name="Illum X", default=0.0)
+    illumposition_y: bpy.props.FloatProperty(name="Illum Y", default=0.0)
+    illumposition_z: bpy.props.FloatProperty(name="Illum Z", default=0.0)
+    
+    constantdirectionallight: bpy.props.FloatProperty(
+        name="Constant Directional Light",
+        default=0.15,
+        min=0.0,
+        max=1.0
+    )
+    
+    ambientboost: bpy.props.BoolProperty(
+        name="Ambient Boost",
+        description="Enable ambient boost",
+        default=False
+    )
+    
+    casttextureshadows: bpy.props.BoolProperty(
+        name="Cast Texture Shadows",
+        description="Enable texture shadow casting",
+        default=False
+    )
+    
+    origin_x: bpy.props.FloatProperty(name="Origin X", default=0.0)
+    origin_y: bpy.props.FloatProperty(name="Origin Y", default=0.0)
+    origin_z: bpy.props.FloatProperty(name="Origin Z", default=0.0)
+    
+    skipboneinbbox: bpy.props.BoolProperty(
+        name="Skip Bone In Bbox",
+        description="Skip bone in bounding box calculation",
+        default=False
+    )
 
 
 class BodyPropGroup(bpy.types.PropertyGroup):
@@ -309,10 +343,33 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             
             # Options
             if props.staticprop:
-                f.write('$staticprop\n\n')
+                f.write('$staticprop\n')
             
             f.write(f'$surfaceprop "{props.surfaceprop}"\n')
-            f.write('$contents "solid"\n\n')
+            f.write('$contents "solid"\n')
+            
+            # Illum position
+            f.write(f'$illumposition {props.illumposition_x} {props.illumposition_y} {props.illumposition_z}\n')
+            
+            # Constant directional light
+            f.write(f'$constantdirectionallight {props.constantdirectionallight}\n')
+            
+            # Ambient boost
+            if props.ambientboost:
+                f.write('$ambientboost\n')
+            
+            # Cast texture shadows
+            if props.casttextureshadows:
+                f.write('$casttextureshadows\n')
+            
+            # Origin
+            f.write(f'$origin {props.origin_x} {props.origin_y} {props.origin_z}\n')
+            
+            # Skip bone in bbox
+            if props.skipboneinbbox:
+                f.write('$skipboneinbbox\n')
+            
+            f.write('\n')
             
             # Générer les séquences
             if len(scene.sequence_list) > 0:
