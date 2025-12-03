@@ -775,7 +775,7 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         
         # Exporter la collision mesh
         if scene.compilation_props.collision_mesh:
-            smd_path = os.path.join(temp_path, "collision.smd")
+            smd_path = os.path.join(temp_path, f"{scene.compilation_props.collision_mesh.name}.smd")
             self.export_mesh_to_smd(scene.compilation_props.collision_mesh, smd_path, True)
     
     def copy_files_to_game_dir(self, context, temp_path, game_dir):
@@ -818,8 +818,8 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         
         # Copier la collision
         if scene.compilation_props.collision_mesh:
-            src = os.path.join(temp_path, "collision.smd")
-            dst = os.path.join(game_dir, "collision.smd")
+            src = os.path.join(temp_path, f"{scene.compilation_props.collision_mesh.name}.smd")
+            dst = os.path.join(game_dir, f"{scene.compilation_props.collision_mesh.name}.smd")
             if os.path.exists(src):
                 shutil.copy2(src, dst)
         
