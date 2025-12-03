@@ -237,7 +237,25 @@ class CompilationProperties(bpy.types.PropertyGroup):
         description="Enable rotation damping parameter",
         default=False
     )
-
+    
+    # Shadow LOD options
+    enable_shadowlod: bpy.props.BoolProperty(
+        name="Enable Shadow LOD",
+        description="Enable shadow LOD replacement",
+        default=False
+    )
+    
+    shadowlod_replace_from: bpy.props.StringProperty(
+        name="Shadow LOD From",
+        description="Original mesh name for shadow LOD (e.g., mesh1_lod0)",
+        default=""
+    )
+    
+    shadowlod_replace_to: bpy.props.StringProperty(
+        name="Shadow LOD To",
+        description="Replacement mesh name for shadow LOD (e.g., mesh1_lod5)",
+        default=""
+    )
 
 class BodyPropGroup(bpy.types.PropertyGroup):
     """Groupe de propriétés pour un $body"""
@@ -671,15 +689,12 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                         
                         f.write('}\n\n')
             
-            # Shadow LOD
-            if len(scene.lod_list) > 0:
-                # Utiliser le dernier LOD pour le shadow LOD
-                shadow_lod = scene.lod_list[-1]
-                if shadow_lod.replace_model_from and shadow_lod.replace_model_to:
-                    f.write('$shadowlod\n')
-                    f.write('{\n')
-                    f.write(f'\treplacemodel "{shadow_lod.replace_model_from}" "{shadow_lod.replace_model_to}"\n')
-                    f.write('}\n\n')
+            # Shadow LOD (option indépendante)
+            if props.enable_shadowlod and props.shadowlod_replace_from and props.shadowlod_replace_to:
+                f.write('$shadowlod\n')
+                f.write('{\n')
+                f.write(f'\treplacemodel "{props.shadowlod_replace_from}" "{props.shadowlod_replace_to}"\n')
+                f.write('}\n\n')
             
             # Collision
             if props.collision_mesh and props.collision_mesh.type == 'MESH':
