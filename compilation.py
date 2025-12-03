@@ -102,9 +102,9 @@ class BodyPropGroup(bpy.types.PropertyGroup):
     
     mesh_object: bpy.props.PointerProperty(
         type=bpy.types.Object,
-        name="Mesh",
-        description="Mesh object for this body",
-        poll=lambda self, obj: obj.type == 'MESH'
+        name="Mesh Category",
+        description="Mesh collection for this body",
+        poll=lambda self, obj: obj.type == 'EMPTY' and obj.instance_type == 'COLLECTION'
     )
 
 
@@ -118,6 +118,32 @@ class SequencePropGroup(bpy.types.PropertyGroup):
     enabled: bpy.props.BoolProperty(
         name="Enabled",
         default=True
+    )
+    
+    animation_mode: bpy.props.EnumProperty(
+        name="Animation Source",
+        description="Where to get the animation from",
+        items=[
+            ('MESH', "Animated Mesh", "Use animated mesh (baked animation or shape keys)"),
+            ('ARMATURE', "Armature", "Use armature deformer with animations")
+        ],
+        default='MESH'
+    )
+    
+    # Mesh animé pour mode MESH
+    animation_mesh: bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Animated Mesh",
+        description="Mesh object with animation (baked or shape keys)",
+        poll=lambda self, obj: obj.type == 'MESH'
+    )
+    
+    # Armature pour mode ARMATURE
+    animation_armature: bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Animation Armature",
+        description="Armature with animations",
+        poll=lambda self, obj: obj.type == 'ARMATURE'
     )
 
 
@@ -140,6 +166,10 @@ class COMPILATION_UL_SequenceList(bpy.types.UIList):
             row = layout.row(align=True)
             row.prop(item, "enabled", text="")
             row.prop(item, "name", text="", emboss=False, icon='ANIM')
+            
+            # Afficher le mode d'animation
+            anim_icon = 'ARMATURE_DATA' if item.animation_mode == 'ARMATURE' else 'MESH_DATA'
+            row.label(text=item.animation_mode, icon=anim_icon)
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
             layout.label(text="", icon='ANIM')

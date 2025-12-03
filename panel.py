@@ -226,18 +226,19 @@ class COMPILATION_PT_SequencesPanel(bpy.types.Panel):
             box = layout.box()
             box.label(text=f"Sequence: {seq.name}", icon='ANIM')
             
-            box.prop(seq, "activity")
-            box.prop(seq, "activity_weight")
+            box.prop(seq, "name", text="Name")
+            box.prop(seq, "enabled", text="Enabled")
             
-            row = box.row(align=True)
-            row.prop(seq, "fadein")
-            row.prop(seq, "fadeout")
+            box.separator()
+            box.label(text="Animation Source", icon='ARMATURE_DATA')
+            box.prop(seq, "animation_mode", text="Source")
             
-            box.prop(seq, "fps")
-            
-            row = box.row(align=True)
-            row.prop(seq, "loop")
-            row.prop(seq, "autoplay")
+            if seq.animation_mode == 'MESH':
+                box.prop(seq, "animation_mesh", text="Animated Mesh")
+                box.label(text="Select mesh with baked animation or shape keys", icon='INFO')
+            else:  # ARMATURE
+                box.prop(seq, "animation_armature", text="Armature")
+                box.label(text="Select armature with animation data", icon='INFO')
 
 
 class COMPILATION_PT_PathsPanel(bpy.types.Panel):
