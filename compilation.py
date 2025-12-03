@@ -314,11 +314,22 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             f.write(f'$surfaceprop "{props.surfaceprop}"\n')
             f.write('$contents "solid"\n\n')
             
-            # Séquence par défaut
-            f.write('$sequence "idle"\n{\n')
-            f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
-            f.write('\tfps 30\n')
-            f.write('}\n\n')
+            # Générer les séquences
+            if len(scene.sequence_list) > 0:
+                for seq in scene.sequence_list:
+                    if seq.enabled:
+                        f.write(f'$sequence "{seq.name}"\n')
+                        f.write('{\n')
+                        f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
+                        f.write('\tfps 30\n')
+                        f.write('}\n\n')
+            else:
+                # Séquence par défaut si aucune séquence n'est définie
+                f.write('$sequence "idle"\n')
+                f.write('{\n')
+                f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
+                f.write('\tfps 30\n')
+                f.write('}\n\n')
             
             # Collision
             if props.collision_mesh and props.collision_mesh.type == 'MESH':
