@@ -608,7 +608,14 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         props = scene.compilation_props
         
         with open(qc_path, "w") as f:
-            f.write(f'$modelname "{props.modelname}"\n\n')
+            # Ordre correct : modelname, cdmaterials, body, lod, shadowlod, options, sequences, collision
+            f.write(f'$modelname "{props.modelname}"\n')
+            
+            # $cdmaterials
+            if props.cdmaterials:
+                f.write(f'$cdmaterials "{props.cdmaterials}"\n')
+            
+            f.write('\n')
             
             # $body ou $bodygroup
             if len(scene.body_list) == 1:
@@ -620,9 +627,27 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                     f.write(f'\tstudio "{body.name}_ref.smd"\n')
                 f.write('}\n\n')
             
-            # $cdmaterials
-            if props.cdmaterials:
-                f.write(f'$cdmaterials "{props.cdmaterials}"\n\n')
+            # LOD Levels (seulement si valides : from ET to définis)
+            lods_written = False
+            if len(scene.lod_list) > 0:
+                for lod in scene.lod_list:
+                    if lod.replace_model_from_obj and lod.replace_model_to_obj:
+                        f.write(f'$lod {lod.lod_level}\n')
+                        f.write('{\n')
+                        f.write(f'\treplacemodel "{lod.replace_model_from_obj.name}" "{lod.replace_model_to_obj.name}"\n')
+                        
+                        if lod.enable_replace_material and lod.replace_material_from and lod.replace_material_to:
+                            f.write(f'\treplacematerial "{lod.replace_material_from}" "{lod.replace_material_to}"\n')
+                        
+                        f.write('}\n\n')
+                        lods_written = True
+            
+            # Shadow LOD (seulement si valide : from ET to définis)
+            if props.enable_shadowlod and props.shadowlod_replace_from_obj and props.shadowlod_replace_to_obj:
+                f.write('$shadowlod\n')
+                f.write('{\n')
+                f.write(f'\treplacemodel "{props.shadowlod_replace_from_obj.name}" "{props.shadowlod_replace_to_obj.name}"\n')
+                f.write('}\n\n')
             
             # Options
             if props.staticprop:
@@ -653,26 +678,6 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                 f.write('$skipboneinbbox\n')
             
             f.write('\n')
-            
-            # LOD Levels (après $body, avant les séquences)
-            if len(scene.lod_list) > 0:
-                for lod in scene.lod_list:
-                    if lod.replace_model_from_obj and lod.replace_model_to_obj:
-                        f.write(f'$lod {lod.lod_level}\n')
-                        f.write('{\n')
-                        f.write(f'\treplacemodel "{lod.replace_model_from_obj.name}" "{lod.replace_model_to_obj.name}"\n')
-                        
-                        if lod.enable_replace_material and lod.replace_material_from and lod.replace_material_to:
-                            f.write(f'\treplacematerial "{lod.replace_material_from}" "{lod.replace_material_to}"\n')
-                        
-                        f.write('}\n\n')
-            
-            # Shadow LOD (après LOD levels)
-            if props.enable_shadowlod and props.shadowlod_replace_from_obj and props.shadowlod_replace_to_obj:
-                f.write('$shadowlod\n')
-                f.write('{\n')
-                f.write(f'\treplacemodel "{props.shadowlod_replace_from_obj.name}" "{props.shadowlod_replace_to_obj.name}"\n')
-                f.write('}\n\n')
             
             # Générer les séquences
             if len(scene.sequence_list) > 0:
