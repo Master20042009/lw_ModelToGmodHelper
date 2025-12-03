@@ -318,24 +318,22 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             if len(scene.sequence_list) > 0:
                 for seq in scene.sequence_list:
                     if seq.enabled:
-                        f.write(f'$sequence "{seq.name}"\n')
-                        f.write('{\n')
+                        f.write(f'$sequence "{seq.name}" {{\n')
                         f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
                         f.write('\tfps 30\n')
                         f.write('}\n\n')
             else:
                 # Séquence par défaut si aucune séquence n'est définie
-                f.write('$sequence "idle"\n')
-                f.write('{\n')
+                f.write('$sequence "idle" {\n')
                 f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
                 f.write('\tfps 30\n')
                 f.write('}\n\n')
             
             # Collision
             if props.collision_mesh and props.collision_mesh.type == 'MESH':
-                f.write('$collisionmodel "collision.smd"\n{\n')
-                f.write(f'\t$mass {props.collision_mass}\n')
-                f.write('\t$rootbone " "\n')
+                f.write('$collisionmodel    "collision.smd"\n')
+                f.write('{\n')
+                f.write('\t$concave\n')
                 f.write('}\n')
     
     def export_meshes(self, context, temp_path):
