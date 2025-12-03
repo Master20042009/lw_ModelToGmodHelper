@@ -620,11 +620,21 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             # $body ou $bodygroup
             if len(scene.body_list) == 1:
                 body = scene.body_list[0]
-                f.write(f'$body "{body.name}" "{body.name}_ref.smd"\n\n')
+                if body.mesh_object:
+                    if isinstance(body.mesh_object, bpy.types.Collection):
+                        body_filename = f"{body.mesh_object.name}.smd"
+                    else:
+                        body_filename = f"{body.mesh_object.name}.smd"
+                    f.write(f'$body "{body.name}" "{body_filename}"\n\n')
             else:
                 f.write('$bodygroup "Body"\n{\n')
                 for body in scene.body_list:
-                    f.write(f'\tstudio "{body.name}_ref.smd"\n')
+                    if body.mesh_object:
+                        if isinstance(body.mesh_object, bpy.types.Collection):
+                            body_filename = f"{body.mesh_object.name}.smd"
+                        else:
+                            body_filename = f"{body.mesh_object.name}.smd"
+                        f.write(f'\tstudio "{body_filename}"\n')
                 f.write('}\n\n')
             
             # LOD Levels (seulement si valides : from ET to définis)
@@ -681,10 +691,19 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             
             # Générer les séquences
             if len(scene.sequence_list) > 0:
+                first_body = scene.body_list[0]
+                if first_body.mesh_object:
+                    if isinstance(first_body.mesh_object, bpy.types.Collection):
+                        first_body_filename = f"{first_body.mesh_object.name}.smd"
+                    else:
+                        first_body_filename = f"{first_body.mesh_object.name}.smd"
+                else:
+                    first_body_filename = f"{first_body.name}_ref.smd"
+                
                 for seq in scene.sequence_list:
                     if seq.enabled:
                         f.write(f'$sequence "{seq.name}" {{\n')
-                        f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
+                        f.write(f'\t"{first_body_filename}"\n')
                         
                         # Activity
                         if seq.enable_activity and seq.activity:
@@ -705,8 +724,17 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                         f.write('}\n\n')
             else:
                 # Séquence par défaut si aucune séquence n'est définie
+                first_body = scene.body_list[0]
+                if first_body.mesh_object:
+                    if isinstance(first_body.mesh_object, bpy.types.Collection):
+                        first_body_filename = f"{first_body.mesh_object.name}.smd"
+                    else:
+                        first_body_filename = f"{first_body.mesh_object.name}.smd"
+                else:
+                    first_body_filename = f"{first_body.name}_ref.smd"
+                
                 f.write('$sequence "idle" {\n')
-                f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
+                f.write(f'\t"{first_body_filename}"\n')
                 f.write('\tfps 30\n')
                 f.write('}\n\n')
             
@@ -746,13 +774,18 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         
         # Exporter les bodies
         for body in scene.body_list:
-            smd_path = os.path.join(temp_path, f"{body.name}_ref.smd")
-            # body.mesh_object est maintenant une Collection, on doit récupérer les meshes dedans
-            if body.mesh_object and isinstance(body.mesh_object, bpy.types.Collection):
-                self.export_collection_to_smd(body.mesh_object, smd_path, False)
-            elif body.mesh_object and body.mesh_object.type == 'MESH':
-                # Fallback si c'est directement un objet mesh (ancienne config)
-                self.export_mesh_to_smd(body.mesh_object, smd_path, False)
+            # Déterminer le nom du fichier SMD à partir du nom exact de l'objet Blender
+            if body.mesh_object:
+                if isinstance(body.mesh_object, bpy.types.Collection):
+                    # Si c'est une Collection, utiliser son nom
+                    smd_filename = f"{body.mesh_object.name}.smd"
+                    smd_path = os.path.join(temp_path, smd_filename)
+                    self.export_collection_to_smd(body.mesh_object, smd_path, False)
+                elif body.mesh_object.type == 'MESH':
+                    # Si c'est un objet mesh, utiliser son nom
+                    smd_filename = f"{body.mesh_object.name}.smd"
+                    smd_path = os.path.join(temp_path, smd_filename)
+                    self.export_mesh_to_smd(body.mesh_object, smd_path, False)
         
         # Exporter les modèles LOD
         for lod in scene.lod_list:
@@ -784,10 +817,15 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         
         # Copier les bodies
         for body in scene.body_list:
-            src = os.path.join(temp_path, f"{body.name}_ref.smd")
-            dst = os.path.join(game_dir, f"{body.name}_ref.smd")
-            if os.path.exists(src):
-                shutil.copy2(src, dst)
+            if body.mesh_object:
+                if isinstance(body.mesh_object, bpy.types.Collection):
+                    body_filename = f"{body.mesh_object.name}.smd"
+                else:
+                    body_filename = f"{body.mesh_object.name}.smd"
+                src = os.path.join(temp_path, body_filename)
+                dst = os.path.join(game_dir, body_filename)
+                if os.path.exists(src):
+                    shutil.copy2(src, dst)
         
         # Copier les modèles LOD
         for lod in scene.lod_list:
