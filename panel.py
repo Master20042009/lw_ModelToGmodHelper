@@ -186,28 +186,6 @@ class COMPILATION_PT_GeneralOptionsPanel(bpy.types.Panel):
         
         layout.prop(props, "staticprop")
         layout.prop(props, "surfaceprop")
-        
-        layout.separator()
-        row = layout.row()
-        row.prop(props, "illumposition_enable", text="$illumposition")
-        if props.illumposition_enable:
-            row = layout.row()
-            row.prop(props, "illumposition", text="")
-        
-        layout.separator()
-        layout.prop(props, "constantdirectionallight")
-        layout.prop(props, "ambientboost")
-        layout.prop(props, "casttextureshadows")
-        
-        layout.separator()
-        row = layout.row()
-        row.prop(props, "origin_enable", text="$origin")
-        if props.origin_enable:
-            row = layout.row()
-            row.prop(props, "origin", text="")
-        
-        layout.separator()
-        layout.prop(props, "skipboneinbbox")
 
 
 class COMPILATION_PT_SequencesPanel(bpy.types.Panel):
