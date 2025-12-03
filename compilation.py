@@ -654,6 +654,26 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             
             f.write('\n')
             
+            # LOD Levels (après $body, avant les séquences)
+            if len(scene.lod_list) > 0:
+                for lod in scene.lod_list:
+                    if lod.replace_model_from_obj and lod.replace_model_to_obj:
+                        f.write(f'$lod {lod.lod_level}\n')
+                        f.write('{\n')
+                        f.write(f'\treplacemodel "{lod.replace_model_from_obj.name}" "{lod.replace_model_to_obj.name}"\n')
+                        
+                        if lod.enable_replace_material and lod.replace_material_from and lod.replace_material_to:
+                            f.write(f'\treplacematerial "{lod.replace_material_from}" "{lod.replace_material_to}"\n')
+                        
+                        f.write('}\n\n')
+            
+            # Shadow LOD (après LOD levels)
+            if props.enable_shadowlod and props.shadowlod_replace_from_obj and props.shadowlod_replace_to_obj:
+                f.write('$shadowlod\n')
+                f.write('{\n')
+                f.write(f'\treplacemodel "{props.shadowlod_replace_from_obj.name}" "{props.shadowlod_replace_to_obj.name}"\n')
+                f.write('}\n\n')
+            
             # Générer les séquences
             if len(scene.sequence_list) > 0:
                 for seq in scene.sequence_list:
@@ -683,26 +703,6 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                 f.write('$sequence "idle" {\n')
                 f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
                 f.write('\tfps 30\n')
-                f.write('}\n\n')
-            
-            # LOD Levels
-            if len(scene.lod_list) > 0:
-                for lod in scene.lod_list:
-                    if lod.replace_model_from_obj and lod.replace_model_to_obj:
-                        f.write(f'$lod {lod.lod_level}\n')
-                        f.write('{\n')
-                        f.write(f'\treplacemodel "{lod.replace_model_from_obj.name}" "{lod.replace_model_to_obj.name}"\n')
-                        
-                        if lod.enable_replace_material and lod.replace_material_from and lod.replace_material_to:
-                            f.write(f'\treplacematerial "{lod.replace_material_from}" "{lod.replace_material_to}"\n')
-                        
-                        f.write('}\n\n')
-            
-            # Shadow LOD (option indépendante)
-            if props.enable_shadowlod and props.shadowlod_replace_from_obj and props.shadowlod_replace_to_obj:
-                f.write('$shadowlod\n')
-                f.write('{\n')
-                f.write(f'\treplacemodel "{props.shadowlod_replace_from_obj.name}" "{props.shadowlod_replace_to_obj.name}"\n')
                 f.write('}\n\n')
             
             # Collision
