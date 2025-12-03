@@ -20,12 +20,16 @@ from .compilation import (
     CompilationProperties,
     BodyPropGroup,
     SequencePropGroup,
+    LODPropGroup,
     COMPILATION_UL_BodyList,
     COMPILATION_UL_SequenceList,
+    COMPILATION_UL_LODList,
     COMPILATION_OT_AddBody,
     COMPILATION_OT_RemoveBody,
     COMPILATION_OT_AddSequence,
     COMPILATION_OT_RemoveSequence,
+    COMPILATION_OT_AddLOD,
+    COMPILATION_OT_RemoveLOD,
     COMPILATION_OT_CompileModel,
 )
 
@@ -36,6 +40,7 @@ from .panel import (
     COMPILATION_PT_GeneralOptionsPanel,
     COMPILATION_PT_SequencesPanel,
     COMPILATION_PT_PathsPanel,
+    COMPILATION_PT_LODPanel,
 )
 
 
@@ -66,10 +71,12 @@ classes = (
     CompilationProperties,
     BodyPropGroup,
     SequencePropGroup,
+    LODPropGroup,
     
     # UI Lists
     COMPILATION_UL_BodyList,
     COMPILATION_UL_SequenceList,
+    COMPILATION_UL_LODList,
     
     # Panels
     RELINKER_PT_Panel,
@@ -78,6 +85,7 @@ classes = (
     COMPILATION_PT_GeneralOptionsPanel,
     COMPILATION_PT_SequencesPanel,
     COMPILATION_PT_PathsPanel,
+    COMPILATION_PT_LODPanel,
     
     # Opérateurs originaux
     RELINKER_OT_RelinkTextures,
@@ -103,5 +111,7 @@ classes = (
     COMPILATION_OT_RemoveBody,
     COMPILATION_OT_AddSequence,
     COMPILATION_OT_RemoveSequence,
+    COMPILATION_OT_AddLOD,
+    COMPILATION_OT_RemoveLOD,
     COMPILATION_OT_CompileModel,
 )

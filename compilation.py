@@ -356,6 +356,47 @@ class SequencePropGroup(bpy.types.PropertyGroup):
     )
 
 
+class LODPropGroup(bpy.types.PropertyGroup):
+    """Groupe de propriétés pour un LOD"""
+    lod_level: bpy.props.IntProperty(
+        name="LOD Level",
+        description="LOD level (0-65535)",
+        default=1,
+        min=0,
+        max=65535
+    )
+    
+    replace_model_from: bpy.props.StringProperty(
+        name="From Model",
+        description="Original mesh name to replace (e.g., mesh1_lod0)",
+        default=""
+    )
+    
+    replace_model_to: bpy.props.StringProperty(
+        name="To Model",
+        description="Replacement mesh name (e.g., mesh1_lod2)",
+        default=""
+    )
+    
+    enable_replace_material: bpy.props.BoolProperty(
+        name="Enable Replace Material",
+        description="Enable material replacement",
+        default=False
+    )
+    
+    replace_material_from: bpy.props.StringProperty(
+        name="From Material",
+        description="Original material name to replace",
+        default=""
+    )
+    
+    replace_material_to: bpy.props.StringProperty(
+        name="To Material",
+        description="Replacement material name",
+        default=""
+    )
+
+
 class COMPILATION_UL_BodyList(bpy.types.UIList):
     """Liste UI pour les bodies"""
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
@@ -382,6 +423,19 @@ class COMPILATION_UL_SequenceList(bpy.types.UIList):
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
             layout.label(text="", icon='ANIM')
+
+
+class COMPILATION_UL_LODList(bpy.types.UIList):
+    """Liste UI pour les LODs"""
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            row = layout.row(align=True)
+            row.label(text=f"LOD {item.lod_level}", icon='MOD_DECIM')
+            row.prop(item, "replace_model_from", text="From")
+            row.prop(item, "replace_model_to", text="To")
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon='MOD_DECIM')
 
 
 class COMPILATION_OT_AddBody(bpy.types.Operator):
@@ -435,6 +489,33 @@ class COMPILATION_OT_RemoveSequence(bpy.types.Operator):
         if len(scene.sequence_list) > 0:
             scene.sequence_list.remove(scene.sequence_list_index)
             scene.sequence_list_index = min(max(0, scene.sequence_list_index - 1), len(scene.sequence_list) - 1)
+        return {'FINISHED'}
+
+
+class COMPILATION_OT_AddLOD(bpy.types.Operator):
+    """Ajouter un nouveau LOD"""
+    bl_idname = "lw_pannel.add_lod"
+    bl_label = "Add LOD"
+    bl_description = "Add a new LOD level"
+    
+    def execute(self, context):
+        lod = context.scene.lod_list.add()
+        lod.lod_level = len(context.scene.lod_list)
+        context.scene.lod_list_index = len(context.scene.lod_list) - 1
+        return {'FINISHED'}
+
+
+class COMPILATION_OT_RemoveLOD(bpy.types.Operator):
+    """Supprimer un LOD"""
+    bl_idname = "lw_pannel.remove_lod"
+    bl_label = "Remove LOD"
+    bl_description = "Remove selected LOD"
+    
+    def execute(self, context):
+        scene = context.scene
+        if len(scene.lod_list) > 0:
+            scene.lod_list.remove(scene.lod_list_index)
+            scene.lod_list_index = min(max(0, scene.lod_list_index - 1), len(scene.lod_list) - 1)
         return {'FINISHED'}
 
 
@@ -576,6 +657,29 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
                 f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
                 f.write('\tfps 30\n')
                 f.write('}\n\n')
+            
+            # LOD Levels
+            if len(scene.lod_list) > 0:
+                for lod in scene.lod_list:
+                    if lod.replace_model_from and lod.replace_model_to:
+                        f.write(f'$lod {lod.lod_level}\n')
+                        f.write('{\n')
+                        f.write(f'\treplacemodel "{lod.replace_model_from}" "{lod.replace_model_to}"\n')
+                        
+                        if lod.enable_replace_material and lod.replace_material_from and lod.replace_material_to:
+                            f.write(f'\treplacematerial "{lod.replace_material_from}" "{lod.replace_material_to}"\n')
+                        
+                        f.write('}\n\n')
+            
+            # Shadow LOD
+            if len(scene.lod_list) > 0:
+                # Utiliser le dernier LOD pour le shadow LOD
+                shadow_lod = scene.lod_list[-1]
+                if shadow_lod.replace_model_from and shadow_lod.replace_model_to:
+                    f.write('$shadowlod\n')
+                    f.write('{\n')
+                    f.write(f'\treplacemodel "{shadow_lod.replace_model_from}" "{shadow_lod.replace_model_to}"\n')
+                    f.write('}\n\n')
             
             # Collision
             if props.collision_mesh and props.collision_mesh.type == 'MESH':

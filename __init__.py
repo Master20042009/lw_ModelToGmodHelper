@@ -26,6 +26,8 @@ def register():
     bpy.types.Scene.body_list_index = bpy.props.IntProperty()
     bpy.types.Scene.sequence_list = bpy.props.CollectionProperty(type=config.SequencePropGroup)
     bpy.types.Scene.sequence_list_index = bpy.props.IntProperty()
+    bpy.types.Scene.lod_list = bpy.props.CollectionProperty(type=config.LODPropGroup)
+    bpy.types.Scene.lod_list_index = bpy.props.IntProperty()
 
 
 def unregister():
@@ -36,6 +38,8 @@ def unregister():
     del bpy.types.Scene.body_list_index
     del bpy.types.Scene.sequence_list
     del bpy.types.Scene.sequence_list_index
+    del bpy.types.Scene.lod_list
+    del bpy.types.Scene.lod_list_index
     
     # Désenregistrer toutes les classes
     for cls in reversed(config.classes):

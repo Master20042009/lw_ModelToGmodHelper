@@ -361,6 +361,62 @@ class COMPILATION_PT_PathsPanel(bpy.types.Panel):
         layout.label(text="Leave empty to use game directory", icon='INFO')
 
 
+class COMPILATION_PT_LODPanel(bpy.types.Panel):
+    """Panel pour les LOD levels"""
+    bl_label = "LOD Levels"
+    bl_idname = "COMPILATION_PT_lod"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'lw_pannel'
+    bl_parent_id = "COMPILATION_PT_main"
+    bl_options = {'DEFAULT_CLOSED'}
+    
+    @classmethod
+    def poll(cls, context):
+        return validate_compilation_config(context)
+    
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        
+        row = layout.row()
+        row.template_list(
+            "COMPILATION_UL_LODList", "",
+            scene, "lod_list",
+            scene, "lod_list_index",
+            rows=3
+        )
+        
+        col = row.column(align=True)
+        col.operator("lw_pannel.add_lod", icon='ADD', text="")
+        col.operator("lw_pannel.remove_lod", icon='REMOVE', text="")
+        
+        # Détails du LOD sélectionné
+        if len(scene.lod_list) > 0 and scene.lod_list_index < len(scene.lod_list):
+            lod = scene.lod_list[scene.lod_list_index]
+            
+            layout.separator()
+            box = layout.box()
+            box.label(text=f"LOD {lod.lod_level}", icon='MOD_DECIM')
+            
+            box.prop(lod, "lod_level", text="LOD Level (0-65535)")
+            
+            layout.separator()
+            layout.label(text="Model Replacement", icon='MESH_DATA')
+            layout.prop(lod, "replace_model_from", text="From (e.g., mesh1_lod0)")
+            layout.prop(lod, "replace_model_to", text="To (e.g., mesh1_lod2)")
+            
+            layout.separator()
+            layout.label(text="Material Replacement", icon='MATERIAL')
+            row = layout.row()
+            row.prop(lod, "enable_replace_material", text="")
+            row.label(text="Enable Material Replace")
+            
+            if lod.enable_replace_material:
+                layout.prop(lod, "replace_material_from", text="From Material")
+                layout.prop(lod, "replace_material_to", text="To Material")
+
+
 # Classes du panel à exporter
 panel_classes = (
     RELINKER_PT_Panel,
@@ -369,4 +425,5 @@ panel_classes = (
     COMPILATION_PT_GeneralOptionsPanel,
     COMPILATION_PT_SequencesPanel,
     COMPILATION_PT_PathsPanel,
+    COMPILATION_PT_LODPanel,
 )
