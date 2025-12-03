@@ -454,14 +454,31 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         if not os.path.exists(props.studiomdl_path):
             raise Exception(f"studiomdl.exe not found: {props.studiomdl_path}")
         
+        qc_full_path = os.path.join(game_dir, "model_compile.qc")
+        
         studiomdl_args = [
             props.studiomdl_path,
             "-game", game_dir,
             "-nop4",
-            "model_compile.qc"
+            qc_full_path
         ]
         
-        result = subprocess.run(studiomdl_args, cwd=game_dir)
-        
-        if result.returncode != 0:
-            raise Exception(f"studiomdl.exe failed with exit code {result.returncode}")
+        try:
+            result = subprocess.run(
+                studiomdl_args, 
+                cwd=game_dir,
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+            
+            # Afficher la sortie pour debug
+            if result.stdout:
+                print(f"[STUDIOMDL STDOUT]\n{result.stdout}")
+            if result.stderr:
+                print(f"[STUDIOMDL STDERR]\n{result.stderr}")
+            
+            if result.returncode != 0:
+                raise Exception(f"studiomdl.exe failed with exit code {result.returncode}\nSTDERR: {result.stderr}")
+        except subprocess.TimeoutExpired:
+            raise Exception("studiomdl.exe timeout (exceeded 120 seconds)")
