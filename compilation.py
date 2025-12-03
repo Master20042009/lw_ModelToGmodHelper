@@ -1,6 +1,7 @@
 import bpy
 import os
 import subprocess
+import shutil
 from pathlib import Path
 from io import StringIO
 
@@ -25,13 +26,6 @@ def on_compilation_path_changed(self, context):
 class CompilationProperties(bpy.types.PropertyGroup):
     """Propriétés pour la compilation Source Engine"""
     
-    # Configuration de base
-    game_name: bpy.props.StringProperty(
-        name="Game",
-        description="Name of the Source game",
-        default="Garry's Mod"
-    )
-    
     studiomdl_path: bpy.props.StringProperty(
         name="studiomdl.exe",
         description="Path to studiomdl.exe",
@@ -46,7 +40,6 @@ class CompilationProperties(bpy.types.PropertyGroup):
         update=on_compilation_path_changed
     )
     
-    # Model info
     modelname: bpy.props.StringProperty(
         name="$modelname",
         description="Model path (e.g., props/mymodel.mdl)",
@@ -59,18 +52,11 @@ class CompilationProperties(bpy.types.PropertyGroup):
         default="models/props/"
     )
     
-    # Collision
     collision_mesh: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Collision Mesh",
         description="Mesh object used for collision",
         poll=lambda self, obj: obj.type == 'MESH'
-    )
-    
-    collision_concave: bpy.props.BoolProperty(
-        name="$concave",
-        description="Enable concave collision",
-        default=False
     )
     
     collision_mass: bpy.props.FloatProperty(
@@ -80,14 +66,6 @@ class CompilationProperties(bpy.types.PropertyGroup):
         min=0.1
     )
     
-    collision_maxconvex: bpy.props.IntProperty(
-        name="$maxconvexpieces",
-        description="Maximum number of convex pieces",
-        default=5,
-        min=1
-    )
-    
-    # General options
     staticprop: bpy.props.BoolProperty(
         name="$staticprop",
         description="Make this a static prop",
@@ -100,55 +78,6 @@ class CompilationProperties(bpy.types.PropertyGroup):
         default="default"
     )
     
-    illumposition_enable: bpy.props.BoolProperty(
-        name="Enable $illumposition",
-        default=False
-    )
-    
-    illumposition: bpy.props.FloatVectorProperty(
-        name="$illumposition",
-        description="Illumination position",
-        default=(0.0, 0.0, 50.0),
-        size=3
-    )
-    
-    constantdirectionallight: bpy.props.BoolProperty(
-        name="$constantdirectionallight",
-        description="Use constant directional lighting",
-        default=False
-    )
-    
-    ambientboost: bpy.props.BoolProperty(
-        name="$ambientboost",
-        description="Boost ambient lighting",
-        default=False
-    )
-    
-    casttextureshadows: bpy.props.BoolProperty(
-        name="$casttextureshadows",
-        description="Cast texture shadows",
-        default=False
-    )
-    
-    origin_enable: bpy.props.BoolProperty(
-        name="Enable $origin",
-        default=False
-    )
-    
-    origin: bpy.props.FloatVectorProperty(
-        name="$origin",
-        description="Model origin offset",
-        default=(0.0, 0.0, 0.0),
-        size=3
-    )
-    
-    skipboneinbbox: bpy.props.BoolProperty(
-        name="$skipboneinbbox",
-        description="Skip bone in bounding box calculation",
-        default=False
-    )
-    
-    # Chemins personnalisés
     smd_output_path: bpy.props.StringProperty(
         name="SMD Output Path",
         description="Custom path for SMD file export (leave empty for temp directory)",
@@ -190,49 +119,7 @@ class SequencePropGroup(bpy.types.PropertyGroup):
         name="Enabled",
         default=True
     )
-    
-    activity: bpy.props.StringProperty(
-        name="Activity",
-        default="ACT_IDLE",
-        description="Activity name for the sequence"
-    )
-    
-    activity_weight: bpy.props.IntProperty(
-        name="Activity Weight",
-        default=1,
-        min=1
-    )
-    
-    fadein: bpy.props.FloatProperty(
-        name="Fade In",
-        default=0.2,
-        min=0.0
-    )
-    
-    fadeout: bpy.props.FloatProperty(
-        name="Fade Out",
-        default=0.2,
-        min=0.0
-    )
-    
-    fps: bpy.props.IntProperty(
-        name="FPS",
-        default=1,
-        min=1
-    )
-    
-    loop: bpy.props.BoolProperty(
-        name="Loop",
-        default=True
-    )
-    
-    autoplay: bpy.props.BoolProperty(
-        name="Autoplay",
-        default=False
-    )
 
-
-# ==================== UI LISTS ====================
 
 class COMPILATION_UL_BodyList(bpy.types.UIList):
     """Liste UI pour les bodies"""
@@ -257,8 +144,6 @@ class COMPILATION_UL_SequenceList(bpy.types.UIList):
             layout.alignment = 'CENTER'
             layout.label(text="", icon='ANIM')
 
-
-# ==================== OPERATORS ====================
 
 class COMPILATION_OT_AddBody(bpy.types.Operator):
     """Ajouter un nouveau body"""
@@ -315,7 +200,7 @@ class COMPILATION_OT_RemoveSequence(bpy.types.Operator):
 
 
 class COMPILATION_OT_CompileModel(bpy.types.Operator):
-    """Compiler le modèle avec les options avancées"""
+    """Compiler le modèle"""
     bl_idname = "lw_pannel.compile_model"
     bl_label = "Compile Model"
     bl_description = "Compile model to Source Engine MDL format"
@@ -356,15 +241,11 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         
         try:
             print(f"[COMPILATION] Starting compilation...")
-            print(f"[COMPILATION] Game directory: {game_dir}")
-            print(f"[COMPILATION] SMD output path: {temp_path}")
-            if props.model_output_path:
-                print(f"[COMPILATION] Model output path: {props.model_output_path}")
             
-            self.generate_qc(context, qc_path, temp_path)
+            self.generate_qc(context, qc_path)
             self.export_meshes(context, temp_path)
             self.copy_files_to_game_dir(context, temp_path, game_dir)
-            self.run_studiomdl(context, qc_path, game_dir)
+            self.run_studiomdl(context, game_dir)
             
             self.report({'INFO'}, "Compilation successful!")
             return {'FINISHED'}
@@ -374,156 +255,88 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             traceback.print_exc()
             return {'CANCELLED'}
     
-    def generate_qc(self, context, qc_path, temp_path):
-        """Génère le fichier QC avec toutes les options"""
+    def generate_qc(self, context, qc_path):
+        """Génère le fichier QC"""
         scene = context.scene
         props = scene.compilation_props
         
         with open(qc_path, "w") as f:
-            # $modelname
             f.write(f'$modelname "{props.modelname}"\n\n')
             
             # $body ou $bodygroup
             if len(scene.body_list) == 1:
                 body = scene.body_list[0]
-                # Format: $body "body_name" "smd_file_name"
                 f.write(f'$body "{body.name}" "{body.name}_ref.smd"\n\n')
             else:
-                # Multiple bodies
                 f.write('$bodygroup "Body"\n{\n')
                 for body in scene.body_list:
-                    # Format: studio "smd_file_name"
                     f.write(f'\tstudio "{body.name}_ref.smd"\n')
                 f.write('}\n\n')
             
             # $cdmaterials
             if props.cdmaterials:
-                for cdmat in props.cdmaterials.split('\n'):
-                    cdmat = cdmat.strip()
-                    if cdmat:
-                        f.write(f'$cdmaterials "{cdmat}"\n')
-                f.write('\n')
+                f.write(f'$cdmaterials "{props.cdmaterials}"\n\n')
             
-            # Options générales
+            # Options
             if props.staticprop:
-                f.write('$staticprop\n')
+                f.write('$staticprop\n\n')
             
             f.write(f'$surfaceprop "{props.surfaceprop}"\n')
+            f.write('$contents "solid"\n\n')
             
-            if props.illumposition_enable:
-                pos = props.illumposition
-                f.write(f'$illumposition {pos[0]:.2f} {pos[1]:.2f} {pos[2]:.2f}\n')
-            
-            if props.constantdirectionallight:
-                f.write('$constantdirectionallight 1\n')
-            
-            if props.ambientboost:
-                f.write('$ambientboost 1\n')
-            
-            if props.casttextureshadows:
-                f.write('$casttextureshadows\n')
-            
-            if props.origin_enable:
-                org = props.origin
-                f.write(f'$origin {org[0]:.2f} {org[1]:.2f} {org[2]:.2f}\n')
-            
-            if props.skipboneinbbox:
-                f.write('$skipboneinbbox\n')
-            
-            f.write('\n')
-            
-            # Séquences
-            if len(scene.sequence_list) > 0:
-                for seq in scene.sequence_list:
-                    if seq.enabled:
-                        f.write(f'$sequence "{seq.name}"\n{{\n')
-                        f.write(f'\t"{seq.name}.smd"\n')
-                        f.write(f'\tactivity "{seq.activity}" {seq.activity_weight}\n')
-                        f.write(f'\tfadein {seq.fadein}\n')
-                        f.write(f'\tfadeout {seq.fadeout}\n')
-                        f.write(f'\tfps {seq.fps}\n')
-                        if seq.loop:
-                            f.write('\tloop\n')
-                        if seq.autoplay:
-                            f.write('\tautoplay\n')
-                        f.write('}\n\n')
-            else:
-                # Séquence par défaut
-                f.write('$sequence "idle"\n{\n')
-                f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
-                f.write('\tfps 1\n')
-                f.write('}\n\n')
+            # Séquence par défaut
+            f.write('$sequence "idle"\n{\n')
+            f.write(f'\t"{scene.body_list[0].name}_ref.smd"\n')
+            f.write('\tfps 30\n')
+            f.write('}\n\n')
             
             # Collision
             if props.collision_mesh and props.collision_mesh.type == 'MESH':
                 f.write('$collisionmodel "collision.smd"\n{\n')
-                
-                if props.collision_concave:
-                    f.write('\t$concave\n')
-                
                 f.write(f'\t$mass {props.collision_mass}\n')
-                f.write(f'\t$maxconvexpieces {props.collision_maxconvex}\n')
                 f.write('\t$rootbone " "\n')
                 f.write('}\n')
     
     def export_meshes(self, context, temp_path):
         """Exporte tous les meshes en SMD"""
         scene = context.scene
-        
-        # Créer le répertoire temp s'il n'existe pas
         os.makedirs(temp_path, exist_ok=True)
         
-        # Exporter les bodies
         for body in scene.body_list:
             smd_path = os.path.join(temp_path, f"{body.name}_ref.smd")
-            print(f"[COMPILATION] Exporting body to: {smd_path}")
-            self.export_mesh_to_smd(body.mesh_object, smd_path)
+            self.export_mesh_to_smd(body.mesh_object, smd_path, False)
         
-        # Exporter la collision
         if scene.compilation_props.collision_mesh:
             smd_path = os.path.join(temp_path, "collision.smd")
-            print(f"[COMPILATION] Exporting collision to: {smd_path}")
-            self.export_mesh_to_smd(scene.compilation_props.collision_mesh, smd_path)
+            self.export_mesh_to_smd(scene.compilation_props.collision_mesh, smd_path, True)
     
     def copy_files_to_game_dir(self, context, temp_path, game_dir):
         """Copie les fichiers SMD et QC vers le répertoire du jeu"""
-        import shutil
-        
         scene = context.scene
         
-        # Copier les fichiers SMD des bodies
         for body in scene.body_list:
             src = os.path.join(temp_path, f"{body.name}_ref.smd")
             dst = os.path.join(game_dir, f"{body.name}_ref.smd")
             if os.path.exists(src):
                 shutil.copy2(src, dst)
-                print(f"[COMPILATION] Copied: {src} -> {dst}")
         
-        # Copier le fichier collision si présent
         if scene.compilation_props.collision_mesh:
             src = os.path.join(temp_path, "collision.smd")
             dst = os.path.join(game_dir, "collision.smd")
             if os.path.exists(src):
                 shutil.copy2(src, dst)
-                print(f"[COMPILATION] Copied: {src} -> {dst}")
         
-        # Copier le QC
         src = os.path.join(temp_path, "model_compile.qc")
         dst = os.path.join(game_dir, "model_compile.qc")
         if os.path.exists(src):
             shutil.copy2(src, dst)
-            print(f"[COMPILATION] Copied: {src} -> {dst}")
     
-    def export_mesh_to_smd(self, obj, path):
+    def export_mesh_to_smd(self, obj, path, is_collision_smd):
         """Exporte un mesh en SMD - adapté de SanjiMDL"""
-        from io import StringIO
-        
-        # Sauvegarder le mode actuel
         current_mode = bpy.context.object.mode if bpy.context.object else 'OBJECT'
         if bpy.context.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
         
-        # Obtenir le mesh évalué
         depsgraph = bpy.context.evaluated_depsgraph_get()
         object_eval = obj.evaluated_get(depsgraph)
         mesh = object_eval.to_mesh()
@@ -531,92 +344,124 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         mesh.transform(obj.matrix_world)
         
         with open(path, "w") as f:
-            # Header SMD
-            f.write("version 1\n")
-            f.write("nodes\n")
-            f.write('0 "root" -1\n')
-            f.write("end\n")
-            f.write("skeleton\n")
-            f.write("time 0\n")
-            f.write("0 0 0 0 0 0 0\n")
-            f.write("end\n")
-            f.write("triangles\n")
+            f.write("version 1\nnodes\n0 \"root\" -1\nend\nskeleton\ntime 0\n0 0 0 0 0 0 0\nend\ntriangles\n")
             
-            # Construire le contenu des triangles
             sb = StringIO()
             has_materials = len(obj.material_slots) > 0
             
-            for tri in mesh.loop_triangles:
-                # Nom du matériau
-                if has_materials and tri.material_index < len(obj.material_slots):
-                    mat_name = obj.material_slots[tri.material_index].name
+            if is_collision_smd:
+                self.export_mesh_smd_collision(sb, mesh)
+            else:
+                if has_materials:
+                    self.export_mesh_smd_with_materials(sb, obj, mesh)
                 else:
-                    mat_name = "default"
-                
-                # Pour chaque vertex du triangle
-                for i in range(3):
-                    vert = mesh.vertices[tri.vertices[i]]
-                    pos = vert.co
-                    normal = vert.normal
-                    
-                    # UV (si disponible)
-                    if mesh.uv_layers.active:
-                        uv = mesh.uv_layers.active.data[tri.loops[i]].uv
-                    else:
-                        uv = (0.0, 0.0)
-                    
-                    # Format: material_name
-                    # 0 x y z nx ny nz u v ???
-                    sb.write(f"{mat_name}\n")
-                    sb.write(f"0  {pos.x:.6f} {pos.y:.6f} {pos.z:.6f}  ")
-                    sb.write(f"{normal.x:.6f} {normal.y:.6f} {normal.z:.6f}  ")
-                    sb.write(f"{uv[0]:.6f} {uv[1]:.6f} 0\n")
+                    self.export_mesh_smd_no_materials(sb, mesh)
             
             f.write(sb.getvalue())
             f.write("end\n")
         
-        print(f"[COMPILATION] Exported mesh to: {path}")
-        
-        # Restaurer le mode
         if current_mode != 'OBJECT' and bpy.context.object:
             bpy.ops.object.mode_set(mode=current_mode)
     
-    def run_studiomdl(self, context, qc_path, game_dir):
-        """Exécute studiomdl.exe - adapté de SanjiMDL"""
+    def export_mesh_smd_collision(self, sb, mesh):
+        """Export collision mesh"""
+        for tri in mesh.loop_triangles:
+            material_name = "Phy"
+            
+            vert_a = mesh.vertices[tri.vertices[0]]
+            vert_b = mesh.vertices[tri.vertices[1]]
+            vert_c = mesh.vertices[tri.vertices[2]]
+            
+            pos_a = vert_a.co
+            pos_b = vert_b.co
+            pos_c = vert_c.co
+            
+            normal_a = vert_a.normal
+            normal_b = vert_b.normal
+            normal_c = vert_c.normal
+            
+            uv_a = mesh.uv_layers.active.data[tri.loops[0]].uv if mesh.uv_layers.active else (0.0, 0.0)
+            uv_b = mesh.uv_layers.active.data[tri.loops[1]].uv if mesh.uv_layers.active else (0.0, 0.0)
+            uv_c = mesh.uv_layers.active.data[tri.loops[2]].uv if mesh.uv_layers.active else (0.0, 0.0)
+            
+            sb.write(f"{material_name}\n0  {pos_a.x:.6f} {pos_a.y:.6f} {pos_a.z:.6f}  {normal_a.x:.6f} {normal_a.y:.6f} {normal_a.z:.6f}  {uv_a[0]:.6f} {uv_a[1]:.6f} 0\n0  {pos_b.x:.6f} {pos_b.y:.6f} {pos_b.z:.6f}  {normal_b.x:.6f} {normal_b.y:.6f} {normal_b.z:.6f}  {uv_b[0]:.6f} {uv_b[1]:.6f} 0\n0  {pos_c.x:.6f} {pos_c.y:.6f} {pos_c.z:.6f}  {normal_c.x:.6f} {normal_c.y:.6f} {normal_c.z:.6f}  {uv_c[0]:.6f} {uv_c[1]:.6f} 0\n")
+    
+    def export_mesh_smd_with_materials(self, sb, obj, mesh):
+        """Export mesh with materials"""
+        for tri in mesh.loop_triangles:
+            material_name = obj.material_slots[tri.material_index].name if tri.material_index < len(obj.material_slots) else "default"
+            
+            vert_a = mesh.vertices[tri.vertices[0]]
+            vert_b = mesh.vertices[tri.vertices[1]]
+            vert_c = mesh.vertices[tri.vertices[2]]
+            
+            pos_a = vert_a.co
+            pos_b = vert_b.co
+            pos_c = vert_c.co
+            
+            normal_a = vert_a.normal
+            normal_b = vert_b.normal
+            normal_c = vert_c.normal
+            
+            if not tri.use_smooth:
+                normal = (pos_b - pos_a).cross(pos_c - pos_a).normalized()
+                normal_a = normal
+                normal_b = normal
+                normal_c = normal
+            
+            uv_a = mesh.uv_layers.active.data[tri.loops[0]].uv if mesh.uv_layers.active else (0.0, 0.0)
+            uv_b = mesh.uv_layers.active.data[tri.loops[1]].uv if mesh.uv_layers.active else (0.0, 0.0)
+            uv_c = mesh.uv_layers.active.data[tri.loops[2]].uv if mesh.uv_layers.active else (0.0, 0.0)
+            
+            sb.write(f"{material_name}\n0  {pos_a.x:.6f} {pos_a.y:.6f} {pos_a.z:.6f}  {normal_a.x:.6f} {normal_a.y:.6f} {normal_a.z:.6f}  {uv_a[0]:.6f} {uv_a[1]:.6f} 0\n0  {pos_b.x:.6f} {pos_b.y:.6f} {pos_b.z:.6f}  {normal_b.x:.6f} {normal_b.y:.6f} {normal_b.z:.6f}  {uv_b[0]:.6f} {uv_b[1]:.6f} 0\n0  {pos_c.x:.6f} {pos_c.y:.6f} {pos_c.z:.6f}  {normal_c.x:.6f} {normal_c.y:.6f} {normal_c.z:.6f}  {uv_c[0]:.6f} {uv_c[1]:.6f} 0\n")
+    
+    def export_mesh_smd_no_materials(self, sb, mesh):
+        """Export mesh without materials"""
+        for tri in mesh.loop_triangles:
+            material_name = "None"
+            
+            vert_a = mesh.vertices[tri.vertices[0]]
+            vert_b = mesh.vertices[tri.vertices[1]]
+            vert_c = mesh.vertices[tri.vertices[2]]
+            
+            pos_a = vert_a.co
+            pos_b = vert_b.co
+            pos_c = vert_c.co
+            
+            normal_a = vert_a.normal
+            normal_b = vert_b.normal
+            normal_c = vert_c.normal
+            
+            if not tri.use_smooth:
+                normal = (pos_b - pos_a).cross(pos_c - pos_a).normalized()
+                normal_a = normal
+                normal_b = normal
+                normal_c = normal
+            
+            uv_a = mesh.uv_layers.active.data[tri.loops[0]].uv if mesh.uv_layers.active else (0.0, 0.0)
+            uv_b = mesh.uv_layers.active.data[tri.loops[1]].uv if mesh.uv_layers.active else (0.0, 0.0)
+            uv_c = mesh.uv_layers.active.data[tri.loops[2]].uv if mesh.uv_layers.active else (0.0, 0.0)
+            
+            sb.write(f"{material_name}\n0  {pos_a.x:.6f} {pos_a.y:.6f} {pos_a.z:.6f}  {normal_a.x:.6f} {normal_a.y:.6f} {normal_a.z:.6f}  {uv_a[0]:.6f} {uv_a[1]:.6f} 0\n0  {pos_b.x:.6f} {pos_b.y:.6f} {pos_b.z:.6f}  {normal_b.x:.6f} {normal_b.y:.6f} {normal_b.z:.6f}  {uv_b[0]:.6f} {uv_b[1]:.6f} 0\n0  {pos_c.x:.6f} {pos_c.y:.6f} {pos_c.z:.6f}  {normal_c.x:.6f} {normal_c.y:.6f} {normal_c.z:.6f}  {uv_c[0]:.6f} {uv_c[1]:.6f} 0\n")
+    
+    def run_studiomdl(self, context, game_dir):
+        """Exécute studiomdl.exe"""
         props = context.scene.compilation_props
         
-        # Vérifier que le chemin du jeu existe
         if not os.path.exists(game_dir):
             raise Exception(f"Game directory not found: {game_dir}")
         
-        # Vérifier que le fichier QC existe dans le répertoire du jeu
-        qc_game_path = os.path.join(game_dir, "model_compile.qc")
-        if not os.path.exists(qc_game_path):
-            raise Exception(f"QC file not found: {qc_game_path}")
-        
-        # Vérifier que studiomdl.exe existe
         if not os.path.exists(props.studiomdl_path):
             raise Exception(f"studiomdl.exe not found: {props.studiomdl_path}")
         
-        print(f"[COMPILATION] studiomdl.exe: {props.studiomdl_path}")
-        print(f"[COMPILATION] Game dir: {game_dir}")
-        print(f"[COMPILATION] QC file: {qc_game_path}")
-        
-        # Construire la commande - utiliser le chemin relatif dans game_dir
         studiomdl_args = [
             props.studiomdl_path,
             "-game", game_dir,
             "-nop4",
-            "model_compile.qc"  # Utiliser le chemin relatif
+            "model_compile.qc"
         ]
         
-        print(f"[COMPILATION] Running: {' '.join(studiomdl_args)}")
-        print(f"[COMPILATION] Working directory: {game_dir}")
-        
-        # Exécuter depuis le répertoire du jeu
         result = subprocess.run(studiomdl_args, cwd=game_dir)
-        
-        print(f"[COMPILATION] studiomdl.exe exit code: {result.returncode}")
         
         if result.returncode != 0:
             raise Exception(f"studiomdl.exe failed with exit code {result.returncode}")
