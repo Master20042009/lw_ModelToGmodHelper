@@ -456,6 +456,18 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
         
         qc_full_path = os.path.join(game_dir, "model_compile.qc")
         
+        if not os.path.exists(qc_full_path):
+            raise Exception(f"QC file not found: {qc_full_path}")
+        
+        print(f"[DEBUG] studiomdl path: {props.studiomdl_path}")
+        print(f"[DEBUG] game directory: {game_dir}")
+        print(f"[DEBUG] QC file: {qc_full_path}")
+        print(f"[DEBUG] Working directory: {game_dir}")
+        
+        # Vérifier que studiomdl.exe est bien exécutable
+        if not os.access(props.studiomdl_path, os.X_OK):
+            print(f"[WARNING] studiomdl.exe may not be executable")
+        
         studiomdl_args = [
             props.studiomdl_path,
             "-game", game_dir,
@@ -463,22 +475,33 @@ class COMPILATION_OT_CompileModel(bpy.types.Operator):
             qc_full_path
         ]
         
+        print(f"[DEBUG] Command: {' '.join(studiomdl_args)}")
+        
         try:
             result = subprocess.run(
                 studiomdl_args, 
                 cwd=game_dir,
                 capture_output=True,
                 text=True,
-                timeout=120
+                timeout=120,
+                shell=False
             )
             
             # Afficher la sortie pour debug
+            print(f"[STUDIOMDL] Return code: {result.returncode}")
             if result.stdout:
                 print(f"[STUDIOMDL STDOUT]\n{result.stdout}")
             if result.stderr:
                 print(f"[STUDIOMDL STDERR]\n{result.stderr}")
             
             if result.returncode != 0:
-                raise Exception(f"studiomdl.exe failed with exit code {result.returncode}\nSTDERR: {result.stderr}")
+                error_msg = f"studiomdl.exe failed with exit code {result.returncode}"
+                if result.stderr:
+                    error_msg += f"\nSTDERR: {result.stderr}"
+                if result.stdout:
+                    error_msg += f"\nSTDOUT: {result.stdout}"
+                raise Exception(error_msg)
+        except FileNotFoundError as e:
+            raise Exception(f"Cannot find studiomdl.exe: {e}")
         except subprocess.TimeoutExpired:
             raise Exception("studiomdl.exe timeout (exceeded 120 seconds)")
