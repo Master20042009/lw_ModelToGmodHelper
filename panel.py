@@ -258,8 +258,8 @@ class COMPILATION_PT_GeneralOptionsPanel(bpy.types.Panel):
         layout.label(text="Shadow LOD", icon='MOD_DECIM')
         layout.prop(props, "enable_shadowlod", text="Enable Shadow LOD")
         if props.enable_shadowlod:
-            layout.prop(props, "shadowlod_replace_from", text="From (e.g., mesh1_lod0)")
-            layout.prop(props, "shadowlod_replace_to", text="To (e.g., mesh1_lod5)")
+            layout.prop(props, "shadowlod_replace_from_obj", text="From Model")
+            layout.prop(props, "shadowlod_replace_to_obj", text="To Model")
 
 
 class COMPILATION_PT_SequencesPanel(bpy.types.Panel):
